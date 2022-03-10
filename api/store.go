@@ -16,9 +16,10 @@ const (
 	HostSandBox    = "https://api.storekit-sandbox.itunes.apple.com"
 	HostProduction = "https://api.storekit.itunes.apple.com"
 
-	PathLookUp             = "/inApps/v1/lookup/{orderId}"
-	PathTransactionHistory = "/inApps/v1/history/{originalTransactionId}"
-	PathRefundHistory      = "/inApps/v1/refund/lookup/"
+	PathLookUp                   = "/inApps/v1/lookup/{orderId}"
+	PathTransactionHistory       = "/inApps/v1/history/{originalTransactionId}"
+	PathRefundHistory            = "/inApps/v1/refund/lookup/"
+	PathGetALLSubscriptionStatus = "/inApps/v1/subscriptions/{originalTransactionId}"
 )
 
 type StoreClient struct {
@@ -34,6 +35,30 @@ func NewStoreClient(token *Token) *StoreClient {
 		cert:  &Cert{},
 	}
 	return client
+}
+
+// Get All Subscription Statuses
+// https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
+func (a *StoreClient) GetALLSubscriptionStatuses(originalTransactionId string) (rsp *StatusResponse, err error) {
+	URL := HostProduction + PathGetALLSubscriptionStatus
+	URL = strings.Replace(URL, "{orderId}", originalTransactionId, -1)
+	statusCode, body, err := a.Do(http.MethodGet, URL, nil)
+	if err != nil {
+		return
+	}
+
+	if statusCode != http.StatusOK {
+		err = fmt.Errorf("GetALLSubscriptionStatuses inApps/v1/subscriptions api return status code %v", statusCode)
+		return
+	}
+
+	err = json.Unmarshal(body, &rsp)
+	if err != nil {
+		fmt.Errorf("GetALLSubscriptionStatuses unmarshal err %+v", err)
+		return nil, err
+	}
+
+	return
 }
 
 // LookupOrderID

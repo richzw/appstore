@@ -22,6 +22,30 @@ type RefundLookupResponse struct {
 	SignedTransactions []string `json:"signedTransactions"`
 }
 
+// https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
+type StatusResponse struct {
+	Environment string                            `json:"environment"`
+	AppAppleId  int                               `json:"appAppleId"`
+	BundleId    string                            `json:"bundleId"`
+	Data        []SubscriptionGroupIdentifierItem `json:"data"`
+}
+
+type SubscriptionGroupIdentifierItem struct {
+	SubscriptionGroupIdentifier string                 `json:"subscriptionGroupIdentifier"`
+	LastTransactions            []LastTransactionsItem `json:"lastTransactions"`
+}
+
+type LastTransactionsItem struct {
+	OriginalTransactionId string `json:"originalTransactionId"`
+	Status                int    `json:"status"`
+	SignedRenewalInfo     string `json:"signedRenewalInfo"`
+	SignedTransactionInfo string `json:"signedTransactionInfo"`
+}
+
+type JWSRenewalInfoDecodedPayload struct {
+
+}
+
 // https://developer.apple.com/documentation/appstoreserverapi/jwsdecodedheader
 type JWSDecodedHeader struct {
 	Alg string   `json:"alg,omitempty"`
