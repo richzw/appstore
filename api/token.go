@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 
@@ -15,9 +15,8 @@ import (
 
 // Authorize Tokens For App Store Server API Request
 // Doc: https://developer.apple.com/documentation/appstoreserverapi/generating_tokens_for_api_requests
-
 var (
-	ErrAuthKeyInvalidPem   = errors.New("token: AuthKey must be a valid .p8 PEM file")
+	ErrAuthKeyInvalidPem  = errors.New("token: AuthKey must be a valid .p8 PEM file")
 	ErrAuthKeyInvalidType = errors.New("token: AuthKey must be of type ecdsa.PrivateKey")
 )
 
@@ -25,15 +24,16 @@ var (
 type Token struct {
 	sync.Mutex
 
-	KeyFile   string
+	KeyContent []byte // Loads a .p8 certificate
+	KeyID      string // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
+	BundleID   string // Your app’s bundle ID
+	Issuer     string // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
+	Sandbox    bool   // default is Production
+
+	// internal variables
 	AuthKey   *ecdsa.PrivateKey // .p8 private key
-
-	KeyID     string
-	BundleID  string // Your app’s bundle ID
-	Issuer    string // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
-	ExpiredAt int64  // The token’s expiration time, in UNIX time. Tokens that expire more than 60 minutes after the time in iat are not valid (Ex: 1623086400)
-
-	Bearer    string // Authorized bearer token
+	ExpiredAt int64             // The token’s expiration time, in UNIX time. Tokens that expire more than 60 minutes after the time in iat are not valid (Ex: 1623086400)
+	Bearer    string            // Authorized bearer token
 }
 
 // GenerateIfExpired checks to see if the token is about to expire and generates a new token.
@@ -58,7 +58,7 @@ func (t *Token) Expired() bool {
 
 // Generate creates a new token.
 func (t *Token) Generate() error {
-	key, err := t.loadKeyFromFile(t.KeyFile)
+	key, err := t.passKeyFromByte(t.KeyContent)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (t *Token) Generate() error {
 
 // loadKeyFromFile loads a .p8 certificate from a local file and returns a *ecdsa.PrivateKey.
 func (t *Token) loadKeyFromFile(filename string) (*ecdsa.PrivateKey, error) {
-	bytes, err := ioutil.ReadFile(filename)
+	bytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -123,4 +123,3 @@ func (t *Token) passKeyFromByte(bytes []byte) (*ecdsa.PrivateKey, error) {
 		return nil, ErrAuthKeyInvalidType
 	}
 }
-

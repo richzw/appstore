@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,14 +17,13 @@ const (
 
 	PathLookUp                   = "/inApps/v1/lookup/{orderId}"
 	PathTransactionHistory       = "/inApps/v1/history/{originalTransactionId}"
-	PathRefundHistory            = "/inApps/v1/refund/lookup/"
+	PathRefundHistory            = "/inApps/v2/refund/lookup/{originalTransactionId}"
 	PathGetALLSubscriptionStatus = "/inApps/v1/subscriptions/{originalTransactionId}"
 )
 
 type StoreClient struct {
-	ProjectID string
-	Token     *Token
-	cert      *Cert
+	Token *Token
+	cert  *Cert
 }
 
 // NewStoreClient create appstore server api client
@@ -37,10 +35,12 @@ func NewStoreClient(token *Token) *StoreClient {
 	return client
 }
 
-// Get All Subscription Statuses
-// https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
+// GetALLSubscriptionStatuses https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
 func (a *StoreClient) GetALLSubscriptionStatuses(originalTransactionId string) (rsp *StatusResponse, err error) {
 	URL := HostProduction + PathGetALLSubscriptionStatus
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathGetALLSubscriptionStatus
+	}
 	URL = strings.Replace(URL, "{orderId}", originalTransactionId, -1)
 	statusCode, body, err := a.Do(http.MethodGet, URL, nil)
 	if err != nil {
@@ -54,16 +54,18 @@ func (a *StoreClient) GetALLSubscriptionStatuses(originalTransactionId string) (
 
 	err = json.Unmarshal(body, &rsp)
 	if err != nil {
-		fmt.Errorf("GetALLSubscriptionStatuses unmarshal err %+v", err)
 		return nil, err
 	}
 
 	return
 }
 
-// LookupOrderID
+// LookupOrderID https://developer.apple.com/documentation/appstoreserverapi/look_up_order_id
 func (a *StoreClient) LookupOrderID(invoiceOrderId string) (rsp *OrderLookupResponse, err error) {
 	URL := HostProduction + PathLookUp
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathLookUp
+	}
 	URL = strings.Replace(URL, "{orderId}", invoiceOrderId, -1)
 	statusCode, body, err := a.Do(http.MethodGet, URL, nil)
 	if err != nil {
@@ -77,7 +79,6 @@ func (a *StoreClient) LookupOrderID(invoiceOrderId string) (rsp *OrderLookupResp
 
 	err = json.Unmarshal(body, &rsp)
 	if err != nil {
-		fmt.Errorf("LookupOrderID unmarshal err %+v", err)
 		return nil, err
 	}
 
@@ -87,14 +88,18 @@ func (a *StoreClient) LookupOrderID(invoiceOrderId string) (rsp *OrderLookupResp
 // GetTransactionHistory https://developer.apple.com/documentation/appstoreserverapi/get_transaction_history
 func (a *StoreClient) GetTransactionHistory(originalTransactionId string) (responses []*HistoryResponse, err error) {
 	URL := HostProduction + PathTransactionHistory
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathTransactionHistory
+	}
 	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 	rsp := HistoryResponse{}
 
-	for ;; {
+	for {
 		data := url.Values{}
 		if rsp.HasMore && rsp.Revision != "" {
 			data.Set("revision", rsp.Revision)
 		}
+
 		statusCode, body, errOmit := a.Do(http.MethodGet, URL+"?"+data.Encode(), nil)
 		if errOmit != nil {
 			return nil, errOmit
@@ -106,45 +111,60 @@ func (a *StoreClient) GetTransactionHistory(originalTransactionId string) (respo
 
 		err = json.Unmarshal(body, &rsp)
 		if err != nil {
-			fmt.Errorf("GetTransactionHistory unmarshal err %+v", err)
-			return
+			return nil, err
 		}
 
 		responses = append(responses, &rsp)
-
 		if !rsp.HasMore {
 			break
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	return
 }
 
 // GetRefundHistory https://developer.apple.com/documentation/appstoreserverapi/get_refund_history
-func (a *StoreClient) GetRefundHistory(originalTransactionID string) (rsp *RefundLookupResponse, statusCode int, err error) {
-	URL := HostProduction + PathRefundHistory + originalTransactionID
-
-	statusCode, body, err := a.Do(http.MethodGet, URL, nil)
-	if err != nil {
-		fmt.Errorf("GetRefundHistory Get err %+v", err)
-		return nil, statusCode, err
+func (a *StoreClient) GetRefundHistory(originalTransactionId string) (responses []*RefundLookupResponse, err error) {
+	URL := HostProduction + PathRefundHistory
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathRefundHistory
 	}
+	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
+	rsp := RefundLookupResponse{}
 
-	if statusCode != http.StatusOK {
-		return nil, statusCode, fmt.Errorf("appstore api: %v return status code %v", URL, statusCode)
+	for {
+		data := url.Values{}
+		if rsp.HasMore && rsp.Revision != "" {
+			data.Set("revision", rsp.Revision)
+		}
+
+		statusCode, body, errOmit := a.Do(http.MethodGet, URL+"?"+data.Encode(), nil)
+		if errOmit != nil {
+			return nil, errOmit
+		}
+
+		if statusCode != http.StatusOK {
+			return nil, fmt.Errorf("appstore api: %v return status code %v", URL, statusCode)
+		}
+
+		err = json.Unmarshal(body, &rsp)
+		if err != nil {
+			return nil, err
+		}
+
+		responses = append(responses, &rsp)
+		if !rsp.HasMore {
+			break
+		}
+
+		time.Sleep(10 * time.Millisecond)
 	}
-
-	err = json.Unmarshal(body, &rsp)
-	if err != nil {
-		return nil, statusCode, fmt.Errorf("GetRefundHistory Unmarshal err %w", err)
-	}
-
 	return
 }
 
-func (a *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error)  {
+func (a *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
 	result := make([]*JWSTransaction, 0)
 	for _, v := range transactions {
 		trans, err := a.parseSignedTransaction(v)
@@ -204,11 +224,10 @@ func (a *StoreClient) Do(method string, url string, body io.Reader) (int, []byte
 	}
 	defer resp.Body.Close()
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return resp.StatusCode, nil, fmt.Errorf("appstore read http body err %w", err)
 	}
 
 	return resp.StatusCode, bytes, err
 }
-

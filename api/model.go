@@ -1,13 +1,12 @@
 package api
 
-// Look Up Order ID
-// https://developer.apple.com/documentation/appstoreserverapi/orderlookupresponse
+// OrderLookupResponse https://developer.apple.com/documentation/appstoreserverapi/orderlookupresponse
 type OrderLookupResponse struct {
 	Status             int      `json:"status"`
 	SignedTransactions []string `json:"signedTransactions"`
 }
 
-// https://developer.apple.com/documentation/appstoreserverapi/historyresponse
+// HistoryResponse https://developer.apple.com/documentation/appstoreserverapi/historyresponse
 type HistoryResponse struct {
 	AppAppleId         int      `json:"appAppleId"`
 	BundleId           string   `json:"bundleId"`
@@ -17,12 +16,14 @@ type HistoryResponse struct {
 	SignedTransactions []string `json:"signedTransactions"`
 }
 
-// https://developer.apple.com/documentation/appstoreserverapi/refundlookupresponse
+// RefundLookupResponse https://developer.apple.com/documentation/appstoreserverapi/refundlookupresponse
 type RefundLookupResponse struct {
+	HasMore            bool     `json:"hasMore"`
+	Revision           string   `json:"revision"`
 	SignedTransactions []string `json:"signedTransactions"`
 }
 
-// https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
+// StatusResponse https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
 type StatusResponse struct {
 	Environment string                            `json:"environment"`
 	AppAppleId  int                               `json:"appAppleId"`
@@ -43,17 +44,16 @@ type LastTransactionsItem struct {
 }
 
 type JWSRenewalInfoDecodedPayload struct {
-
 }
 
-// https://developer.apple.com/documentation/appstoreserverapi/jwsdecodedheader
+// JWSDecodedHeader https://developer.apple.com/documentation/appstoreserverapi/jwsdecodedheader
 type JWSDecodedHeader struct {
 	Alg string   `json:"alg,omitempty"`
 	Kid string   `json:"kid,omitempty"`
 	X5C []string `json:"x5c,omitempty"`
 }
 
-// https://developer.apple.com/documentation/appstoreserverapi/jwstransaction
+// JWSTransaction https://developer.apple.com/documentation/appstoreserverapi/jwstransaction
 type JWSTransaction struct {
 	TransactionID               string `json:"transactionId,omitempty"`
 	OriginalTransactionId       string `json:"originalTransactionId,omitempty"`
@@ -73,8 +73,6 @@ type JWSTransaction struct {
 	OfferIdentifier             string `json:"offerIdentifier,omitempty"`
 }
 
-// TODO: add more condition validator
-func (j *JWSTransaction) Valid() error {
-
+func (J JWSTransaction) Valid() error {
 	return nil
 }
