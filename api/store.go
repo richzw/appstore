@@ -21,13 +21,24 @@ const (
 	PathGetALLSubscriptionStatus = "/inApps/v1/subscriptions/{originalTransactionId}"
 )
 
+type StoreConfig struct {
+	KeyContent []byte // Loads a .p8 certificate
+	KeyID      string // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
+	BundleID   string // Your app’s bundle ID
+	Issuer     string // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
+	Sandbox    bool   // default is Production
+}
+
 type StoreClient struct {
 	Token *Token
 	cert  *Cert
 }
 
 // NewStoreClient create appstore server api client
-func NewStoreClient(token *Token) *StoreClient {
+func NewStoreClient(config *StoreConfig) *StoreClient {
+	token := &Token{}
+	token.WithConfig(config)
+
 	client := &StoreClient{
 		Token: token,
 		cert:  &Cert{},
