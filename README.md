@@ -7,11 +7,17 @@
 ### Look Up Order ID
 
 ```go
-    const ACCOUNTKEY = `
+import(
+    "github.com/richzw/appstore/api"
+)
+
+const ACCOUNTKEY = `
     -----BEGIN PRIVATE KEY-----
     FAKEACCOUNTKEYBASE64FORMAT
     -----END PRIVATE KEY-----
     `
+
+func main() {
     c := &StoreConfig{
         KeyContent: []byte(ACCOUNTKEY),
         KeyID:      "SKEYID",
@@ -25,6 +31,7 @@
     rsp, err := a.LookupOrderID(invoiceOrderId)
 
     orders, err := a.ParseSignedTransactions(rsp.SignedTransactions)
+}
 ```
 
 
