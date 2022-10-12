@@ -175,6 +175,8 @@ func (a *StoreClient) GetRefundHistory(originalTransactionId string) (responses 
 	return
 }
 
+// ParseSignedTransactions parse the jws singed transactions
+// Per doc: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.6
 func (a *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
 	result := make([]*JWSTransaction, 0)
 	for _, v := range transactions {
