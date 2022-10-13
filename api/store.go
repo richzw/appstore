@@ -97,7 +97,7 @@ func (a *StoreClient) LookupOrderID(invoiceOrderId string) (rsp *OrderLookupResp
 }
 
 // GetTransactionHistory https://developer.apple.com/documentation/appstoreserverapi/get_transaction_history
-func (a *StoreClient) GetTransactionHistory(originalTransactionId string) (responses []*HistoryResponse, err error) {
+func (a *StoreClient) GetTransactionHistory(originalTransactionId string, query *url.Values) (responses []*HistoryResponse, err error) {
 	URL := HostProduction + PathTransactionHistory
 	if a.Token.Sandbox {
 		URL = HostSandBox + PathTransactionHistory
@@ -106,12 +106,14 @@ func (a *StoreClient) GetTransactionHistory(originalTransactionId string) (respo
 	rsp := HistoryResponse{}
 
 	for {
-		data := url.Values{}
+		if query == nil {
+			query = &url.Values{}
+		}
 		if rsp.HasMore && rsp.Revision != "" {
-			data.Set("revision", rsp.Revision)
+			query.Set("revision", rsp.Revision)
 		}
 
-		statusCode, body, errOmit := a.Do(http.MethodGet, URL+"?"+data.Encode(), nil)
+		statusCode, body, errOmit := a.Do(http.MethodGet, URL+"?"+query.Encode(), nil)
 		if errOmit != nil {
 			return nil, errOmit
 		}
