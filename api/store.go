@@ -52,7 +52,7 @@ func (a *StoreClient) GetALLSubscriptionStatuses(originalTransactionId string) (
 	if a.Token.Sandbox {
 		URL = HostSandBox + PathGetALLSubscriptionStatus
 	}
-	URL = strings.Replace(URL, "{orderId}", originalTransactionId, -1)
+	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 	statusCode, body, err := a.Do(http.MethodGet, URL, nil)
 	if err != nil {
 		return
