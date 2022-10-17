@@ -71,6 +71,9 @@ type JWSTransaction struct {
 	SignedDate                  int64  `json:"signedDate,omitempty"`
 	OfferType                   int64  `json:"offerType,omitempty"`
 	OfferIdentifier             string `json:"offerIdentifier,omitempty"`
+	RevocationDate              int64  `json:"revocationDate,omitempty"`
+	RevocationReason            int    `json:"revocationReason,omitempty"`
+	IsUpgraded                  bool   `json:"isUpgraded,omitempty"`
 }
 
 func (J JWSTransaction) Valid() error {
