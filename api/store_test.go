@@ -93,6 +93,7 @@ func TestStoreClient_GetTransactionHistory(t *testing.T) {
 			a := NewStoreClient(c)
 			tt.args.query.Set("productType", "AUTO_RENEWABLE")
 			tt.args.query.Set("productType", "NON_CONSUMABLE")
+			tt.args.query.Set("productType", "CONSUMABLE")
 			gotRsp, err := a.GetTransactionHistory(tt.args.originalTransactionId, tt.args.query)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTransactionHistory() error = %v, wantErr %v", err, tt.wantErr)
@@ -110,6 +111,56 @@ func TestStoreClient_GetTransactionHistory(t *testing.T) {
 				}
 			}
 
+		})
+	}
+}
+
+func TestStoreClient_GetRefundHistory(t *testing.T) {
+	type args struct {
+		originalTransactionId string
+		query                 *url.Values
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "GetRefundHistory api test",
+			args: args{originalTransactionId: "123321",
+				query: &url.Values{}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &StoreConfig{
+				KeyContent: []byte(ACCOUNTKEY),
+				KeyID:      "SKEYID",
+				BundleID:   "fake.bundle.id",
+				Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
+				Sandbox:    false,
+			}
+
+			a := NewStoreClient(c)
+			gotRsp, err := a.GetRefundHistory(tt.args.originalTransactionId)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRefundHistory() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			for _, rsp := range gotRsp {
+				t.Logf("%+v", rsp.SignedTransactions)
+				trans, err := a.ParseSignedTransactions(rsp.SignedTransactions)
+				t.Logf("%+v", trans)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("GetTransactionHistory() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				for _, tran := range trans {
+					t.Logf("%+v", tran)
+				}
+			}
 		})
 	}
 }
