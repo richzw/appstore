@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
@@ -19,6 +20,7 @@ const (
 	PathTransactionHistory       = "/inApps/v1/history/{originalTransactionId}"
 	PathRefundHistory            = "/inApps/v2/refund/lookup/{originalTransactionId}"
 	PathGetALLSubscriptionStatus = "/inApps/v1/subscriptions/{originalTransactionId}"
+	PathConsumptionInfo          = "/inApps/v1/transactions/consumption/{originalTransactionId}"
 )
 
 type StoreConfig struct {
@@ -175,6 +177,27 @@ func (a *StoreClient) GetRefundHistory(originalTransactionId string) (responses 
 		time.Sleep(10 * time.Millisecond)
 	}
 	return
+}
+
+// SendConsumptionInfo https://developer.apple.com/documentation/appstoreserverapi/send_consumption_information
+func (a *StoreClient) SendConsumptionInfo(originalTransactionId string, body ConsumptionRequestBody) (statusCode int, err error) {
+	URL := HostProduction + PathConsumptionInfo
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathConsumptionInfo
+	}
+	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
+
+	bodyBuf := new(bytes.Buffer)
+	err = json.NewEncoder(bodyBuf).Encode(body)
+	if err != nil {
+		return 0, err
+	}
+
+	statusCode, _, err = a.Do(http.MethodPut, URL, bodyBuf)
+	if err != nil {
+		return statusCode, err
+	}
+	return statusCode, nil
 }
 
 // ParseSignedTransactions parse the jws singed transactions

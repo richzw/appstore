@@ -43,6 +43,21 @@ type LastTransactionsItem struct {
 	SignedTransactionInfo string `json:"signedTransactionInfo"`
 }
 
+// ConsumptionRequestBody https://developer.apple.com/documentation/appstoreserverapi/consumptionrequest
+type ConsumptionRequestBody struct {
+	AccountTenure            int    `json:"accountTenure"`
+	AppAccountToken          string `json:"appAccountToken"`
+	ConsumptionStatus        int    `json:"consumptionStatus"`
+	CustomerConsented        bool   `json:"customerConsented"`
+	DeliveryStatus           int    `json:"deliveryStatus"`
+	LifetimeDollarsPurchased int    `json:"lifetimeDollarsPurchased"`
+	LifetimeDollarsRefunded  int    `json:"lifetimeDollarsRefunded"`
+	Platform                 int    `json:"platform"`
+	PlayTime                 int    `json:"playTime"`
+	SampleContentProvided    bool   `json:"sampleContentProvided"`
+	UserStatus               int    `json:"userStatus"`
+}
+
 type JWSRenewalInfoDecodedPayload struct {
 }
 
