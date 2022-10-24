@@ -16,11 +16,12 @@ const (
 	HostSandBox    = "https://api.storekit-sandbox.itunes.apple.com"
 	HostProduction = "https://api.storekit.itunes.apple.com"
 
-	PathLookUp                   = "/inApps/v1/lookup/{orderId}"
-	PathTransactionHistory       = "/inApps/v1/history/{originalTransactionId}"
-	PathRefundHistory            = "/inApps/v2/refund/lookup/{originalTransactionId}"
-	PathGetALLSubscriptionStatus = "/inApps/v1/subscriptions/{originalTransactionId}"
-	PathConsumptionInfo          = "/inApps/v1/transactions/consumption/{originalTransactionId}"
+	PathLookUp                        = "/inApps/v1/lookup/{orderId}"
+	PathTransactionHistory            = "/inApps/v1/history/{originalTransactionId}"
+	PathRefundHistory                 = "/inApps/v2/refund/lookup/{originalTransactionId}"
+	PathGetALLSubscriptionStatus      = "/inApps/v1/subscriptions/{originalTransactionId}"
+	PathConsumptionInfo               = "/inApps/v1/transactions/consumption/{originalTransactionId}"
+	PathExtendSubscriptionRenewalDate = "/inApps/v1/subscriptions/extend/{originalTransactionId}"
 )
 
 type StoreConfig struct {
@@ -184,6 +185,27 @@ func (a *StoreClient) SendConsumptionInfo(originalTransactionId string, body Con
 	URL := HostProduction + PathConsumptionInfo
 	if a.Token.Sandbox {
 		URL = HostSandBox + PathConsumptionInfo
+	}
+	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
+
+	bodyBuf := new(bytes.Buffer)
+	err = json.NewEncoder(bodyBuf).Encode(body)
+	if err != nil {
+		return 0, err
+	}
+
+	statusCode, _, err = a.Do(http.MethodPut, URL, bodyBuf)
+	if err != nil {
+		return statusCode, err
+	}
+	return statusCode, nil
+}
+
+// ExtendSubscriptionRenewalDate https://developer.apple.com/documentation/appstoreserverapi/extend_a_subscription_renewal_date
+func (a *StoreClient) ExtendSubscriptionRenewalDate(originalTransactionId string, body ExtendRenewalDateRequest) (statusCode int, err error) {
+	URL := HostProduction + PathExtendSubscriptionRenewalDate
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathExtendSubscriptionRenewalDate
 	}
 	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 

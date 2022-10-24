@@ -72,6 +72,10 @@ func main() {
     query.Set("productType", "AUTO_RENEWABLE")
     query.Set("productType", "NON_CONSUMABLE")
     gotRsp, err := a.GetTransactionHistory(originalTransactionId, query)
+
+    for _, rsp := range gotRsp {
+       trans, err := a.ParseSignedTransactions(rsp.SignedTransactions)
+    }
 }
 ```
 

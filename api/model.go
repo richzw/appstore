@@ -94,3 +94,20 @@ type JWSTransaction struct {
 func (J JWSTransaction) Valid() error {
 	return nil
 }
+
+// https://developer.apple.com/documentation/appstoreserverapi/extendreasoncode
+type ExtendReasonCode int
+
+const (
+	UndeclaredExtendReasonCode = iota
+	CustomerSatisfaction
+	OtherReasons
+	ServiceIssueOrOutage
+)
+
+// ExtendRenewalDateRequest https://developer.apple.com/documentation/appstoreserverapi/extendrenewaldaterequest
+type ExtendRenewalDateRequest struct {
+	ExtendByDays      int              `json:"extendByDays"`
+	ExtendReasonCode  ExtendReasonCode `json:"extendReasonCode"`
+	RequestIdentifier string           `json:"requestIdentifier"`
+}
