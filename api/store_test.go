@@ -194,7 +194,7 @@ func TestStoreClient_GetNotificationHistory(t *testing.T) {
 				KeyContent: []byte(ACCOUNTKEY),
 				KeyID:      "SKEYID",
 				BundleID:   "fake.bundle.id",
-				Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",q
+				Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
 			}
 
 			a := NewStoreClient(c)
