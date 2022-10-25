@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 )
 
 const ACCOUNTKEY = `
@@ -161,6 +162,52 @@ func TestStoreClient_GetRefundHistory(t *testing.T) {
 					t.Logf("%+v", tran)
 				}
 			}
+		})
+	}
+}
+
+func TestStoreClient_GetNotificationHistory(t *testing.T) {
+	type args struct {
+		body NotificationHistoryRequest
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "GetNotificationHistory api test",
+			args: args{
+				body: NotificationHistoryRequest{
+					StartDate: time.Now().Add(-time.Hour * time.Duration(480)).UnixMilli(),
+					EndDate:   time.Now().Add(-time.Hour * time.Duration(24)).UnixMilli(),
+					//OriginalTransactionId: "123321",
+					NotificationType: NotificationTypeV2Refund,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &StoreConfig{
+				KeyContent: []byte(ACCOUNTKEY),
+				KeyID:      "SKEYID",
+				BundleID:   "fake.bundle.id",
+				Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",q
+			}
+
+			a := NewStoreClient(c)
+			gotRsp, err := a.GetNotificationHistory(tt.args.body)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRefundHistory() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			for _, rsp := range gotRsp {
+				t.Logf("%+v", rsp)
+			}
+
 		})
 	}
 }
