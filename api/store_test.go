@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/url"
 	"reflect"
 	"testing"
@@ -43,7 +44,7 @@ func TestStoreClient_LookupOrderID(t *testing.T) {
 			}
 
 			a := NewStoreClient(c)
-			gotRsp, err := a.LookupOrderID(tt.args.invoiceOrderId)
+			gotRsp, err := a.LookupOrderID(context.TODO(), tt.args.invoiceOrderId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LookupOrderID() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -95,7 +96,7 @@ func TestStoreClient_GetTransactionHistory(t *testing.T) {
 			tt.args.query.Set("productType", "AUTO_RENEWABLE")
 			tt.args.query.Set("productType", "NON_CONSUMABLE")
 			tt.args.query.Set("productType", "CONSUMABLE")
-			gotRsp, err := a.GetTransactionHistory(tt.args.originalTransactionId, tt.args.query)
+			gotRsp, err := a.GetTransactionHistory(context.TODO(), tt.args.originalTransactionId, tt.args.query)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTransactionHistory() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -144,7 +145,7 @@ func TestStoreClient_GetRefundHistory(t *testing.T) {
 			}
 
 			a := NewStoreClient(c)
-			gotRsp, err := a.GetRefundHistory(tt.args.originalTransactionId)
+			gotRsp, err := a.GetRefundHistory(context.TODO(), tt.args.originalTransactionId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRefundHistory() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -198,7 +199,7 @@ func TestStoreClient_GetNotificationHistory(t *testing.T) {
 			}
 
 			a := NewStoreClient(c)
-			gotRsp, err := a.GetNotificationHistory(tt.args.body)
+			gotRsp, err := a.GetNotificationHistory(context.TODO(), tt.args.body)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRefundHistory() error = %v, wantErr %v", err, tt.wantErr)
 				return

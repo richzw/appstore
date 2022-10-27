@@ -40,7 +40,7 @@ func main() {
     a := NewStoreClient(c)
     rsp, err := a.LookupOrderID(invoiceOrderId)
 
-    orders, err := a.ParseSignedTransactions(rsp.SignedTransactions)
+    orders, err := a.ParseSignedTransactions(context.TODO(), rsp.SignedTransactions)
 }
 ```
 
@@ -71,7 +71,7 @@ func main() {
     query := &url.Values{}
     query.Set("productType", "AUTO_RENEWABLE")
     query.Set("productType", "NON_CONSUMABLE")
-    gotRsp, err := a.GetTransactionHistory(originalTransactionId, query)
+    gotRsp, err := a.GetTransactionHistory(context.TODO(), originalTransactionId, query)
 
     for _, rsp := range gotRsp {
        trans, err := a.ParseSignedTransactions(rsp.SignedTransactions)
@@ -103,7 +103,7 @@ func main() {
     }
     originalTransactionId := "FAKEORDERID"
     a := NewStoreClient(c)
-    gotRsp, err := a.GetRefundHistory(originalTransactionId)
+    gotRsp, err := a.GetRefundHistory(context.TODO(), originalTransactionId)
 
     for _, rsp := range gotRsp {
        trans, err := a.ParseSignedTransactions(rsp.SignedTransactions)
