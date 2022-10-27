@@ -191,3 +191,8 @@ const (
 	FirstSendAttemptResultTlsIssue           FirstSendAttemptResult = "TLS_ISSUE"
 	FirstSendAttemptResultUnsupportedCharset FirstSendAttemptResult = "UNSUPPORTED_CHARSET"
 )
+
+// SendTestNotificationResponse https://developer.apple.com/documentation/appstoreserverapi/sendtestnotificationresponse
+type SendTestNotificationResponse struct {
+	TestNotificationToken string `json:"testNotificationToken"`
+}

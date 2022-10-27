@@ -67,7 +67,7 @@ func main() {
         Sandbox:    false,
     }
     originalTransactionId := "FAKEORDERID"
-
+    a := NewStoreClient(c)
     query := &url.Values{}
     query.Set("productType", "AUTO_RENEWABLE")
     query.Set("productType", "NON_CONSUMABLE")
@@ -78,6 +78,39 @@ func main() {
     }
 }
 ```
+
+### Get Refund History
+
+```go
+import(
+    "github.com/richzw/appstore/api"
+)
+
+// ACCOUNTPRIVATEKEY is the key file generated from previous step
+const ACCOUNTPRIVATEKEY = `
+    -----BEGIN PRIVATE KEY-----
+    FAKEACCOUNTKEYBASE64FORMAT
+    -----END PRIVATE KEY-----
+    `
+
+func main() {
+    c := &StoreConfig{
+        KeyContent: []byte(ACCOUNTPRIVATEKEY),
+        KeyID:      "FAKEKEYID",
+        BundleID:   "fake.bundle.id",
+        Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
+        Sandbox:    false,
+    }
+    originalTransactionId := "FAKEORDERID"
+    a := NewStoreClient(c)
+    gotRsp, err := a.GetRefundHistory(originalTransactionId)
+
+    for _, rsp := range gotRsp {
+       trans, err := a.ParseSignedTransactions(rsp.SignedTransactions)
+    }
+}
+```
+
 
 
 # License

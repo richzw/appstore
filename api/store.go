@@ -23,6 +23,8 @@ const (
 	PathConsumptionInfo               = "/inApps/v1/transactions/consumption/{originalTransactionId}"
 	PathExtendSubscriptionRenewalDate = "/inApps/v1/subscriptions/extend/{originalTransactionId}"
 	PathGetNotificationHistory        = "/inApps/v1/notifications/history"
+	PathRequestTestNotification       = "/inApps/v1/notifications/test"
+	PathGetTestNotificationStatus     = "/inApps/v1/notifications/test/{testNotificationToken}"
 )
 
 type StoreConfig struct {
@@ -274,6 +276,27 @@ func (a *StoreClient) GetNotificationHistory(body NotificationHistoryRequest) (r
 	}
 
 	return responses, nil
+}
+
+// SendRequestTestNotification https://developer.apple.com/documentation/appstoreserverapi/request_a_test_notification
+func (a *StoreClient) SendRequestTestNotification() (int, []byte, error) {
+	URL := HostProduction + PathRequestTestNotification
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathRequestTestNotification
+	}
+
+	return a.Do(http.MethodPost, URL, nil)
+}
+
+// GetTestNotificationStatus https://developer.apple.com/documentation/appstoreserverapi/get_test_notification_status
+func (a *StoreClient) GetTestNotificationStatus(testNotificationToken string) (int, []byte, error) {
+	URL := HostProduction + PathGetTestNotificationStatus
+	if a.Token.Sandbox {
+		URL = HostSandBox + PathGetTestNotificationStatus
+	}
+	URL = strings.Replace(URL, "{testNotificationToken}", testNotificationToken, -1)
+
+	return a.Do(http.MethodGet, URL, nil)
 }
 
 // ParseSignedTransactions parse the jws singed transactions
