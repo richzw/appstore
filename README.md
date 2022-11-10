@@ -111,11 +111,11 @@ func main() {
 }
 ```
 
+# Support
 
+App Store Server API 1.0+
 
 # License
-
--------------------
 
 appstore is licensed under the MIT.
 
