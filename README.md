@@ -2,6 +2,10 @@
 [App Store Server API](https://developer.apple.com/documentation/appstoreserverapi) Golang Client
 ================
 
+The App Store Server API is a REST API that you call from your server to request and provide information about your customers' in-app purchases. 
+
+The App Store Server API is independent of the app’s installation status on the customers’ devices. The App Store server returns information based on a customer’s in-app purchase history regardless of whether the customer installs, removes, or reinstalls the app on their devices.
+
 # Quick Start
 
 ### [Generate a Private Key](https://developer.apple.com/documentation/appstoreserverapi/creating_api_keys_to_use_with_the_app_store_server_api)
@@ -113,7 +117,7 @@ func main() {
 
 # Support
 
-App Store Server API 1.0+
+App Store Server API [1.0+](https://developer.apple.com/documentation/appstoreserverapi)
 
 # License
 
