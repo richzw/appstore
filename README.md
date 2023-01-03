@@ -27,7 +27,7 @@ go get github.com/richzw/appstore
 
 ```go
 import(
-    "github.com/richzw/appstore/api"
+    "github.com/richzw/appstore"
 )
 
 // ACCOUNTPRIVATEKEY is the key file generated from previous step
@@ -38,7 +38,7 @@ const ACCOUNTPRIVATEKEY = `
     `
 
 func main() {
-    c := &StoreConfig{
+    c := &appstore.StoreConfig{
         KeyContent: []byte(ACCOUNTPRIVATEKEY),
         KeyID:      "FAKEKEYID",
         BundleID:   "fake.bundle.id",
@@ -47,10 +47,10 @@ func main() {
     }
     invoiceOrderId := "FAKEORDERID"
 
-    a := NewStoreClient(c)
-    rsp, err := a.LookupOrderID(invoiceOrderId)
+    a := appstore.NewStoreClient(c)
+    rsp, err := a.LookupOrderID(context.TODO(), invoiceOrderId)
 
-    orders, err := a.ParseSignedTransactions(context.TODO(), rsp.SignedTransactions)
+    orders, err := a.ParseSignedTransactions(rsp.SignedTransactions)
 }
 ```
 
@@ -58,7 +58,7 @@ func main() {
 
 ```go
 import(
-    "github.com/richzw/appstore/api"
+    "github.com/richzw/appstore"
 )
 
 // ACCOUNTPRIVATEKEY is the key file generated from previous step
@@ -69,7 +69,7 @@ const ACCOUNTPRIVATEKEY = `
     `
 
 func main() {
-    c := &StoreConfig{
+    c := &appstore.StoreConfig{
         KeyContent: []byte(ACCOUNTPRIVATEKEY),
         KeyID:      "FAKEKEYID",
         BundleID:   "fake.bundle.id",
@@ -77,7 +77,7 @@ func main() {
         Sandbox:    false,
     }
     originalTransactionId := "FAKEORDERID"
-    a := NewStoreClient(c)
+    a := appstore.NewStoreClient(c)
     query := &url.Values{}
     query.Set("productType", "AUTO_RENEWABLE")
     query.Set("productType", "NON_CONSUMABLE")
@@ -93,7 +93,7 @@ func main() {
 
 ```go
 import(
-    "github.com/richzw/appstore/api"
+    "github.com/richzw/appstore"
 )
 
 // ACCOUNTPRIVATEKEY is the key file generated from previous step
@@ -104,7 +104,7 @@ const ACCOUNTPRIVATEKEY = `
     `
 
 func main() {
-    c := &StoreConfig{
+    c := &appstore.StoreConfig{
         KeyContent: []byte(ACCOUNTPRIVATEKEY),
         KeyID:      "FAKEKEYID",
         BundleID:   "fake.bundle.id",
@@ -112,7 +112,7 @@ func main() {
         Sandbox:    false,
     }
     originalTransactionId := "FAKEORDERID"
-    a := NewStoreClient(c)
+    a := appstore.NewStoreClient(c)
     gotRsp, err := a.GetRefundHistory(context.TODO(), originalTransactionId)
 
     for _, rsp := range gotRsp {
