@@ -1,4 +1,4 @@
-package api
+package appstore
 
 import (
 	"crypto/ecdsa"
@@ -29,7 +29,6 @@ at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM
 `
 
 type Cert struct {
-
 }
 
 // Per doc: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.6
@@ -81,7 +80,6 @@ func (c *Cert) extractCertByIndex(tokenStr string, index int) ([]byte, error) {
 	return certByte, nil
 }
 
-
 func (c *Cert) verifyCert(certByte, intermediaCertStr []byte) error {
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM([]byte(rootPEM))
@@ -120,5 +118,3 @@ func (c *Cert) verifyCert(certByte, intermediaCertStr []byte) error {
 
 	return nil
 }
-
-

@@ -1,4 +1,4 @@
-package api
+package appstore
 
 // OrderLookupResponse https://developer.apple.com/documentation/appstoreserverapi/orderlookupresponse
 type OrderLookupResponse struct {

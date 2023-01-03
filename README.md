@@ -8,6 +8,12 @@ The App Store Server API is independent of the app’s installation status on th
 
 # Quick Start
 
+### Installation
+
+```shell
+go get github.com/richzw/appstore
+```
+
 ### [Generate a Private Key](https://developer.apple.com/documentation/appstoreserverapi/creating_api_keys_to_use_with_the_app_store_server_api)
 
 > Log in to [App Store Connect](https://appstoreconnect.apple.com/login) and complete the following steps:

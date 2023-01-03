@@ -1,4 +1,4 @@
-package api
+package appstore
 
 import (
 	"crypto/ecdsa"
