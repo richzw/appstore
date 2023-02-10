@@ -40,12 +40,17 @@ type StoreClient struct {
 	Token   *Token
 	httpCli *http.Client
 	cert    *Cert
+	hostUrl string
 }
 
 // NewStoreClient create a appstore server api client
 func NewStoreClient(config *StoreConfig) *StoreClient {
 	token := &Token{}
 	token.WithConfig(config)
+	hostUrl := HostProduction
+	if config.Sandbox {
+		hostUrl = HostSandBox
+	}
 
 	client := &StoreClient{
 		Token: token,
@@ -53,55 +58,62 @@ func NewStoreClient(config *StoreConfig) *StoreClient {
 		httpCli: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		hostUrl: hostUrl,
 	}
 	return client
 }
 
-// NewWithClient creates a appstore server api client with a custom http client.
+// NewStoreClientWithHTTPClient creates a appstore server api client with a custom http client.
 func NewStoreClientWithHTTPClient(config *StoreConfig, httpClient *http.Client) *StoreClient {
 	token := &Token{}
 	token.WithConfig(config)
+	hostUrl := HostProduction
+	if config.Sandbox {
+		hostUrl = HostSandBox
+	}
 
 	client := &StoreClient{
 		Token:   token,
 		cert:    &Cert{},
 		httpCli: httpClient,
+		hostUrl: hostUrl,
 	}
 	return client
 }
 
-// GetALLSubscriptionStatuses https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
-func (a *StoreClient) GetALLSubscriptionStatuses(ctx context.Context, originalTransactionId string) (rsp *StatusResponse, err error) {
-	URL := HostProduction + PathGetALLSubscriptionStatus
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathGetALLSubscriptionStatus
-	}
-	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
-	statusCode, body, err := a.Do(ctx, http.MethodGet, URL, nil)
+func (c *StoreClient) initHttpClient(hc HTTPClient) (DoFunc, error) {
+	authToken, err := c.Token.GenerateIfExpired()
 	if err != nil {
-		return
+		return nil, fmt.Errorf("appstore generate token err %w", err)
 	}
+	return AddHeader(hc, "Authorization", "Bearer "+authToken), nil
+}
 
-	if statusCode != http.StatusOK {
-		return nil, fmt.Errorf("appstore api: %v return status code %v", URL, statusCode)
-	}
+// GetALLSubscriptionStatuses https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
+func (c *StoreClient) GetALLSubscriptionStatuses(ctx context.Context, originalTransactionId string) (*StatusResponse, error) {
+	URL := c.hostUrl + PathGetALLSubscriptionStatus
+	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 
-	err = json.Unmarshal(body, &rsp)
+	var client HTTPClient
+	client = c.httpCli
+	client = SetInitializer(client, c.initHttpClient)
+	client = RequireResponseStatus(client)
+	client = SetRequest(ctx, client, http.MethodGet, URL)
+	rsp := &StatusResponse{}
+	client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
+
+	_, err := client.Do(nil)
 	if err != nil {
 		return nil, err
 	}
-
-	return
+	return rsp, nil
 }
 
 // LookupOrderID https://developer.apple.com/documentation/appstoreserverapi/look_up_order_id
-func (a *StoreClient) LookupOrderID(ctx context.Context, orderId string) (rsp *OrderLookupResponse, err error) {
-	URL := HostProduction + PathLookUp
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathLookUp
-	}
+func (c *StoreClient) LookupOrderID(ctx context.Context, orderId string) (rsp *OrderLookupResponse, err error) {
+	URL := c.hostUrl + PathLookUp
 	URL = strings.Replace(URL, "{orderId}", orderId, -1)
-	statusCode, body, err := a.Do(ctx, http.MethodGet, URL, nil)
+	statusCode, body, err := c.Do(ctx, http.MethodGet, URL, nil)
 	if err != nil {
 		return
 	}
@@ -119,11 +131,8 @@ func (a *StoreClient) LookupOrderID(ctx context.Context, orderId string) (rsp *O
 }
 
 // GetTransactionHistory https://developer.apple.com/documentation/appstoreserverapi/get_transaction_history
-func (a *StoreClient) GetTransactionHistory(ctx context.Context, originalTransactionId string, query *url.Values) (responses []*HistoryResponse, err error) {
-	URL := HostProduction + PathTransactionHistory
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathTransactionHistory
-	}
+func (c *StoreClient) GetTransactionHistory(ctx context.Context, originalTransactionId string, query *url.Values) (responses []*HistoryResponse, err error) {
+	URL := c.hostUrl + PathTransactionHistory
 	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 
 	if query == nil {
@@ -133,7 +142,7 @@ func (a *StoreClient) GetTransactionHistory(ctx context.Context, originalTransac
 	for {
 		rsp := HistoryResponse{}
 
-		statusCode, body, errOmit := a.Do(ctx, http.MethodGet, URL+"?"+query.Encode(), nil)
+		statusCode, body, errOmit := c.Do(ctx, http.MethodGet, URL+"?"+query.Encode(), nil)
 		if errOmit != nil {
 			return nil, errOmit
 		}
@@ -163,18 +172,15 @@ func (a *StoreClient) GetTransactionHistory(ctx context.Context, originalTransac
 }
 
 // GetRefundHistory https://developer.apple.com/documentation/appstoreserverapi/get_refund_history
-func (a *StoreClient) GetRefundHistory(ctx context.Context, originalTransactionId string) (responses []*RefundLookupResponse, err error) {
-	baseURL := HostProduction + PathRefundHistory
-	if a.Token.Sandbox {
-		baseURL = HostSandBox + PathRefundHistory
-	}
+func (c *StoreClient) GetRefundHistory(ctx context.Context, originalTransactionId string) (responses []*RefundLookupResponse, err error) {
+	baseURL := c.hostUrl + PathRefundHistory
 	baseURL = strings.Replace(baseURL, "{originalTransactionId}", originalTransactionId, -1)
 
 	URL := baseURL
 	for {
 		rsp := RefundLookupResponse{}
 
-		statusCode, body, errOmit := a.Do(ctx, http.MethodGet, URL, nil)
+		statusCode, body, errOmit := c.Do(ctx, http.MethodGet, URL, nil)
 		if errOmit != nil {
 			return nil, errOmit
 		}
@@ -205,11 +211,8 @@ func (a *StoreClient) GetRefundHistory(ctx context.Context, originalTransactionI
 }
 
 // SendConsumptionInfo https://developer.apple.com/documentation/appstoreserverapi/send_consumption_information
-func (a *StoreClient) SendConsumptionInfo(ctx context.Context, originalTransactionId string, body ConsumptionRequestBody) (statusCode int, err error) {
-	URL := HostProduction + PathConsumptionInfo
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathConsumptionInfo
-	}
+func (c *StoreClient) SendConsumptionInfo(ctx context.Context, originalTransactionId string, body ConsumptionRequestBody) (statusCode int, err error) {
+	URL := c.hostUrl + PathConsumptionInfo
 	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 
 	bodyBuf := new(bytes.Buffer)
@@ -218,7 +221,7 @@ func (a *StoreClient) SendConsumptionInfo(ctx context.Context, originalTransacti
 		return 0, err
 	}
 
-	statusCode, _, err = a.Do(ctx, http.MethodPut, URL, bodyBuf)
+	statusCode, _, err = c.Do(ctx, http.MethodPut, URL, bodyBuf)
 	if err != nil {
 		return statusCode, err
 	}
@@ -226,11 +229,8 @@ func (a *StoreClient) SendConsumptionInfo(ctx context.Context, originalTransacti
 }
 
 // ExtendSubscriptionRenewalDate https://developer.apple.com/documentation/appstoreserverapi/extend_a_subscription_renewal_date
-func (a *StoreClient) ExtendSubscriptionRenewalDate(ctx context.Context, originalTransactionId string, body ExtendRenewalDateRequest) (statusCode int, err error) {
-	URL := HostProduction + PathExtendSubscriptionRenewalDate
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathExtendSubscriptionRenewalDate
-	}
+func (c *StoreClient) ExtendSubscriptionRenewalDate(ctx context.Context, originalTransactionId string, body ExtendRenewalDateRequest) (statusCode int, err error) {
+	URL := c.hostUrl + PathExtendSubscriptionRenewalDate
 	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
 
 	bodyBuf := new(bytes.Buffer)
@@ -239,7 +239,7 @@ func (a *StoreClient) ExtendSubscriptionRenewalDate(ctx context.Context, origina
 		return 0, err
 	}
 
-	statusCode, _, err = a.Do(ctx, http.MethodPut, URL, bodyBuf)
+	statusCode, _, err = c.Do(ctx, http.MethodPut, URL, bodyBuf)
 	if err != nil {
 		return statusCode, err
 	}
@@ -248,11 +248,8 @@ func (a *StoreClient) ExtendSubscriptionRenewalDate(ctx context.Context, origina
 
 // GetNotificationHistory https://developer.apple.com/documentation/appstoreserverapi/get_notification_history
 // Note: Notification history is available starting on June 6, 2022. Use a startDate of June 6, 2022 or later in your request.
-func (a *StoreClient) GetNotificationHistory(ctx context.Context, body NotificationHistoryRequest) (responses []NotificationHistoryResponseItem, err error) {
-	baseURL := HostProduction + PathGetNotificationHistory
-	if a.Token.Sandbox {
-		baseURL = HostSandBox + PathGetNotificationHistory
-	}
+func (c *StoreClient) GetNotificationHistory(ctx context.Context, body NotificationHistoryRequest) (responses []NotificationHistoryResponseItem, err error) {
+	baseURL := c.hostUrl + PathGetNotificationHistory
 
 	bodyBuf := new(bytes.Buffer)
 	err = json.NewEncoder(bodyBuf).Encode(body)
@@ -265,7 +262,7 @@ func (a *StoreClient) GetNotificationHistory(ctx context.Context, body Notificat
 		rsp := NotificationHistoryResponses{}
 		rsp.NotificationHistory = make([]NotificationHistoryResponseItem, 0)
 
-		statusCode, rspBody, errOmit := a.Do(ctx, http.MethodPost, URL, bodyBuf)
+		statusCode, rspBody, errOmit := c.Do(ctx, http.MethodPost, URL, bodyBuf)
 		if errOmit != nil {
 			return nil, errOmit
 		}
@@ -297,32 +294,26 @@ func (a *StoreClient) GetNotificationHistory(ctx context.Context, body Notificat
 }
 
 // SendRequestTestNotification https://developer.apple.com/documentation/appstoreserverapi/request_a_test_notification
-func (a *StoreClient) SendRequestTestNotification(ctx context.Context) (int, []byte, error) {
-	URL := HostProduction + PathRequestTestNotification
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathRequestTestNotification
-	}
+func (c *StoreClient) SendRequestTestNotification(ctx context.Context) (int, []byte, error) {
+	URL := c.hostUrl + PathRequestTestNotification
 
-	return a.Do(ctx, http.MethodPost, URL, nil)
+	return c.Do(ctx, http.MethodPost, URL, nil)
 }
 
 // GetTestNotificationStatus https://developer.apple.com/documentation/appstoreserverapi/get_test_notification_status
-func (a *StoreClient) GetTestNotificationStatus(ctx context.Context, testNotificationToken string) (int, []byte, error) {
-	URL := HostProduction + PathGetTestNotificationStatus
-	if a.Token.Sandbox {
-		URL = HostSandBox + PathGetTestNotificationStatus
-	}
+func (c *StoreClient) GetTestNotificationStatus(ctx context.Context, testNotificationToken string) (int, []byte, error) {
+	URL := c.hostUrl + PathGetTestNotificationStatus
 	URL = strings.Replace(URL, "{testNotificationToken}", testNotificationToken, -1)
 
-	return a.Do(ctx, http.MethodGet, URL, nil)
+	return c.Do(ctx, http.MethodGet, URL, nil)
 }
 
 // ParseSignedTransactions parse the jws singed transactions
 // Per doc: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.6
-func (a *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
+func (c *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
 	result := make([]*JWSTransaction, 0)
 	for _, v := range transactions {
-		trans, err := a.parseSignedTransaction(v)
+		trans, err := c.parseSignedTransaction(v)
 		if err == nil && trans != nil {
 			result = append(result, trans)
 		}
@@ -331,23 +322,23 @@ func (a *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTran
 	return result, nil
 }
 
-func (a *StoreClient) parseSignedTransaction(transaction string) (*JWSTransaction, error) {
+func (c *StoreClient) parseSignedTransaction(transaction string) (*JWSTransaction, error) {
 	tran := &JWSTransaction{}
 
-	rootCertStr, err := a.cert.extractCertByIndex(transaction, 2)
+	rootCertStr, err := c.cert.extractCertByIndex(transaction, 2)
 	if err != nil {
 		return nil, err
 	}
-	intermediaCertStr, err := a.cert.extractCertByIndex(transaction, 1)
+	intermediaCertStr, err := c.cert.extractCertByIndex(transaction, 1)
 	if err != nil {
 		return nil, err
 	}
-	if err = a.cert.verifyCert(rootCertStr, intermediaCertStr); err != nil {
+	if err = c.cert.verifyCert(rootCertStr, intermediaCertStr); err != nil {
 		return nil, err
 	}
 
 	_, err = jwt.ParseWithClaims(transaction, tran, func(token *jwt.Token) (interface{}, error) {
-		return a.cert.extractPublicKeyFromToken(transaction)
+		return c.cert.extractPublicKeyFromToken(transaction)
 	})
 	if err != nil {
 		return nil, err
@@ -356,9 +347,28 @@ func (a *StoreClient) parseSignedTransaction(transaction string) (*JWSTransactio
 	return tran, nil
 }
 
+func (c *StoreClient) doRequest(ctx context.Context, client HTTPClient, method, url string, body io.Reader) (int, []byte, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, nil, fmt.Errorf("appstore read http body err %w", err)
+	}
+	return resp.StatusCode, bodyBytes, nil
+}
+
 // Per doc: https://developer.apple.com/documentation/appstoreserverapi#topics
-func (a *StoreClient) Do(ctx context.Context, method string, url string, body io.Reader) (int, []byte, error) {
-	authToken, err := a.Token.GenerateIfExpired()
+func (c *StoreClient) Do(ctx context.Context, method string, url string, body io.Reader) (int, []byte, error) {
+	authToken, err := c.Token.GenerateIfExpired()
 	if err != nil {
 		return 0, nil, fmt.Errorf("appstore generate token err %w", err)
 	}
@@ -373,7 +383,7 @@ func (a *StoreClient) Do(ctx context.Context, method string, url string, body io
 	req.Header.Set("User-Agent", "App Store Client")
 	req = req.WithContext(ctx)
 
-	resp, err := a.httpCli.Do(req)
+	resp, err := c.httpCli.Do(req)
 	if err != nil {
 		return 0, nil, fmt.Errorf("appstore http client do err %w", err)
 	}
