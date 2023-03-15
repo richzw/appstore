@@ -179,3 +179,66 @@ func RateLimit(c HTTPClient, reqPerMin int) DoFunc {
 		return c.Do(req)
 	}
 }
+
+func ShouldRetryDefault(status int, err error) bool {
+	if 500 <= status && status <= 599 {
+		return true
+	}
+	if status == http.StatusTooManyRequests {
+		return true
+	}
+	if err == io.ErrUnexpectedEOF {
+		return true
+	}
+
+	// If error unwrapping is available, use this to examine wrapped errors.
+	if err, ok := err.(interface{ Unwrap() error }); ok {
+		return ShouldRetryDefault(status, err.Unwrap())
+	}
+	return false
+}
+
+func SetRetry(c HTTPClient, bo Backoff, shouldRetry func(int, error) bool) DoFunc {
+	return func(req *http.Request) (*http.Response, error) {
+		var resp *http.Response
+		var err error
+		var pause time.Duration
+
+		for {
+			select {
+			case <-req.Context().Done():
+				if err == nil {
+					err = req.Context().Err()
+				}
+				return resp, err
+			case <-time.After(pause):
+			}
+
+			resp, err = c.Do(req)
+
+			var status int
+			if resp != nil {
+				status = resp.StatusCode
+			}
+
+			if req.GetBody == nil || !shouldRetry(status, err) {
+				break
+			}
+			var errBody error
+			req.Body, errBody = req.GetBody()
+			if errBody != nil {
+				break
+			}
+
+			pause = bo.Pause()
+			if resp != nil && resp.Body != nil {
+				resp.Body.Close()
+			}
+
+			if pause < 0 {
+				return nil, fmt.Errorf("sendAndRetry timeout for url %s", req.URL)
+			}
+		}
+		return resp, err
+	}
+}
