@@ -221,12 +221,7 @@ func SetRetry(c HTTPClient, bo Backoff, shouldRetry func(int, error) bool) DoFun
 				status = resp.StatusCode
 			}
 
-			if req.GetBody == nil || !shouldRetry(status, err) {
-				break
-			}
-			var errBody error
-			req.Body, errBody = req.GetBody()
-			if errBody != nil {
+			if !shouldRetry(status, err) {
 				break
 			}
 
