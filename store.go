@@ -3,14 +3,18 @@ package appstore
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 const (
@@ -317,20 +321,41 @@ func (c *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTran
 func (c *StoreClient) parseSignedTransaction(transaction string) (*JWSTransaction, error) {
 	tran := &JWSTransaction{}
 
-	rootCertStr, err := c.cert.extractCertByIndex(transaction, 2)
+	rootCertBytes, err := c.cert.extractCertByIndex(transaction, 2)
 	if err != nil {
 		return nil, err
 	}
-	intermediaCertStr, err := c.cert.extractCertByIndex(transaction, 1)
+	rootCert, err := x509.ParseCertificate(rootCertBytes)
+	if err != nil {
+		return nil, errors.New("failed to parse root certificate")
+	}
+	intermediaCertBytes, err := c.cert.extractCertByIndex(transaction, 1)
 	if err != nil {
 		return nil, err
 	}
-	if err = c.cert.verifyCert(rootCertStr, intermediaCertStr); err != nil {
+	intermediaCert, err := x509.ParseCertificate(intermediaCertBytes)
+	if err != nil {
+		return nil, errors.New("failed to parse intermediate certificate")
+	}
+	leafCertBytes, err := c.cert.extractCertByIndex(transaction, 0)
+	if err != nil {
+		return nil, err
+	}
+	leafCert, err := x509.ParseCertificate(leafCertBytes)
+	if err != nil {
+		return nil, errors.New("failed to parse leaf certificate")
+	}
+	if err = c.cert.verifyCert(rootCert, intermediaCert, leafCert); err != nil {
 		return nil, err
 	}
 
+	pk, ok := leafCert.PublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("appstore public key must be of type ecdsa.PublicKey")
+	}
+
 	_, err = jwt.ParseWithClaims(transaction, tran, func(token *jwt.Token) (interface{}, error) {
-		return c.cert.extractPublicKeyFromToken(transaction)
+		return pk, nil
 	})
 	if err != nil {
 		return nil, err
