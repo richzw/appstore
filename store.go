@@ -150,7 +150,7 @@ func (c *StoreClient) GetTransactionHistory(ctx context.Context, originalTransac
 	for {
 		rsp := HistoryResponse{}
 		client = SetRequest(ctx, client, http.MethodGet, URL+"?"+query.Encode())
-		client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
+		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
 		_, err = client.Do(nil)
 		if err != nil {
 			return nil, err
@@ -185,7 +185,7 @@ func (c *StoreClient) GetRefundHistory(ctx context.Context, originalTransactionI
 	for {
 		rsp := RefundLookupResponse{}
 		client = SetRequest(ctx, client, http.MethodGet, URL)
-		client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
+		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
 		_, err = client.Do(nil)
 		if err != nil {
 			return nil, err
@@ -266,7 +266,7 @@ func (c *StoreClient) GetNotificationHistory(ctx context.Context, body Notificat
 
 		client = SetRequest(ctx, client, http.MethodPost, URL)
 		client = SetRequestBodyJSON(client, bodyBuf)
-		client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
+		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
 		_, err = client.Do(nil)
 		if err != nil {
 			return nil, err
