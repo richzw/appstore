@@ -1,10 +1,12 @@
 package appstore
 
 import (
+	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -91,4 +93,43 @@ func (c *Cert) verifyCert(rootCert, intermediaCert, leafCert *x509.Certificate) 
 	//}
 
 	return nil
+}
+
+func (c *Cert) extractPublicKeyFromToken(token string) (*ecdsa.PublicKey, error) {
+	rootCertBytes, err := c.extractCertByIndex(token, 2)
+	if err != nil {
+		return nil, err
+	}
+	rootCert, err := x509.ParseCertificate(rootCertBytes)
+	if err != nil {
+		return nil, fmt.Errorf("appstore failed to parse root certificate")
+	}
+
+	intermediaCertBytes, err := c.extractCertByIndex(token, 1)
+	if err != nil {
+		return nil, err
+	}
+	intermediaCert, err := x509.ParseCertificate(intermediaCertBytes)
+	if err != nil {
+		return nil, fmt.Errorf("appstore failed to parse intermediate certificate")
+	}
+
+	leafCertBytes, err := c.extractCertByIndex(token, 0)
+	if err != nil {
+		return nil, err
+	}
+	leafCert, err := x509.ParseCertificate(leafCertBytes)
+	if err != nil {
+		return nil, fmt.Errorf("appstore failed to parse leaf certificate")
+	}
+	if err = c.verifyCert(rootCert, intermediaCert, leafCert); err != nil {
+		return nil, err
+	}
+
+	switch pk := leafCert.PublicKey.(type) {
+	case *ecdsa.PublicKey:
+		return pk, nil
+	default:
+		return nil, errors.New("appstore public key must be of type ecdsa.PublicKey")
+	}
 }

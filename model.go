@@ -1,5 +1,7 @@
 package appstore
 
+import "github.com/golang-jwt/jwt/v4"
+
 // OrderLookupResponse https://developer.apple.com/documentation/appstoreserverapi/orderlookupresponse
 type OrderLookupResponse struct {
 	Status             int      `json:"status"`
@@ -195,4 +197,56 @@ const (
 // SendTestNotificationResponse https://developer.apple.com/documentation/appstoreserverapi/sendtestnotificationresponse
 type SendTestNotificationResponse struct {
 	TestNotificationToken string `json:"testNotificationToken"`
+}
+
+// Notification signed payload
+type NotificationPayload struct {
+	jwt.RegisteredClaims
+	NotificationType    string           `json:"notificationType"`
+	Subtype             string           `json:"subtype"`
+	NotificationUUID    string           `json:"notificationUUID"`
+	NotificationVersion string           `json:"notificationVersion"`
+	Data                NotificationData `json:"data"`
+}
+
+// Notification Data
+type NotificationData struct {
+	jwt.RegisteredClaims
+	AppAppleID            int    `json:"appAppleId"`
+	BundleID              string `json:"bundleId"`
+	BundleVersion         string `json:"bundleVersion"`
+	Environment           string `json:"environment"`
+	SignedRenewalInfo     string `json:"signedRenewalInfo"`
+	SignedTransactionInfo string `json:"signedTransactionInfo"`
+}
+
+// Notification Transaction Info
+type TransactionInfo struct {
+	jwt.RegisteredClaims
+	TransactionId               string `json:"transactionId"`
+	OriginalTransactionID       string `json:"originalTransactionId"`
+	WebOrderLineItemID          string `json:"webOrderLineItemId"`
+	BundleID                    string `json:"bundleId"`
+	ProductID                   string `json:"productId"`
+	SubscriptionGroupIdentifier string `json:"subscriptionGroupIdentifier"`
+	PurchaseDate                int    `json:"purchaseDate"`
+	OriginalPurchaseDate        int    `json:"originalPurchaseDate"`
+	ExpiresDate                 int    `json:"expiresDate"`
+	Type                        string `json:"type"`
+	InAppOwnershipType          string `json:"inAppOwnershipType"`
+	SignedDate                  int    `json:"signedDate"`
+	Environment                 string `json:"environment"`
+}
+
+// Notification Renewal Info
+type RenewalInfo struct {
+	jwt.RegisteredClaims
+	OriginalTransactionID  string `json:"originalTransactionId"`
+	ExpirationIntent       int    `json:"expirationIntent"`
+	AutoRenewProductId     string `json:"autoRenewProductId"`
+	ProductID              string `json:"productId"`
+	AutoRenewStatus        int    `json:"autoRenewStatus"`
+	IsInBillingRetryPeriod bool   `json:"isInBillingRetryPeriod"`
+	SignedDate             int    `json:"signedDate"`
+	Environment            string `json:"environment"`
 }

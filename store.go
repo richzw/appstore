@@ -304,6 +304,12 @@ func (c *StoreClient) GetTestNotificationStatus(ctx context.Context, testNotific
 	return c.Do(ctx, http.MethodGet, URL, nil)
 }
 
+func (c *StoreClient) ParseNotificationV2(tokenStr string) (*jwt.Token, error) {
+	return jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return c.cert.extractPublicKeyFromToken(tokenStr)
+	})
+}
+
 // ParseSignedTransactions parse the jws singed transactions
 // Per doc: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.6
 func (c *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
