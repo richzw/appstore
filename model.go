@@ -8,6 +8,11 @@ type OrderLookupResponse struct {
 	SignedTransactions []string `json:"signedTransactions"`
 }
 
+// TransactionInfoResponse https://developer.apple.com/documentation/appstoreserverapi/transactioninforesponse
+type TransactionInfoResponse struct {
+	SignedTransactionInfo string `json:"signedTransactionInfo"`
+}
+
 // HistoryResponse https://developer.apple.com/documentation/appstoreserverapi/historyresponse
 type HistoryResponse struct {
 	AppAppleId         int      `json:"appAppleId"`

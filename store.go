@@ -21,6 +21,7 @@ const (
 	HostSandBox    = "https://api.storekit-sandbox.itunes.apple.com"
 	HostProduction = "https://api.storekit.itunes.apple.com"
 
+	PathTransactionInfo               = "/inApps/v1/transactions/{transactionId}"
 	PathLookUp                        = "/inApps/v1/lookup/{orderId}"
 	PathTransactionHistory            = "/inApps/v1/history/{originalTransactionId}"
 	PathRefundHistory                 = "/inApps/v2/refund/lookup/{originalTransactionId}"
@@ -104,6 +105,26 @@ func (c *StoreClient) GetALLSubscriptionStatuses(ctx context.Context, originalTr
 	client = RequireResponseStatus(client, http.StatusOK)
 	client = SetRequest(ctx, client, http.MethodGet, URL)
 	rsp := &StatusResponse{}
+	client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
+
+	_, err := client.Do(nil)
+	if err != nil {
+		return nil, err
+	}
+	return rsp, nil
+}
+
+// GetTransactionInfo https://developer.apple.com/documentation/appstoreserverapi/get_transaction_info
+func (c *StoreClient) GetTransactionInfo(ctx context.Context, transactionId string) (*TransactionInfoResponse, error) {
+	URL := c.hostUrl + PathTransactionInfo
+	URL = strings.Replace(URL, "{transactionId}", transactionId, -1)
+
+	var client HTTPClient
+	client = c.httpCli
+	client = SetInitializer(client, c.initHttpClient)
+	client = RequireResponseStatus(client, http.StatusOK)
+	client = SetRequest(ctx, client, http.MethodGet, URL)
+	rsp := &TransactionInfoResponse{}
 	client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
 
 	_, err := client.Do(nil)

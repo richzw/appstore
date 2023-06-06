@@ -123,7 +123,7 @@ func main() {
 
 # Support
 
-App Store Server API [1.6](https://developer.apple.com/documentation/appstoreserverapi)
+App Store Server API [1.8](https://developer.apple.com/documentation/appstoreserverapi)
 
 # License
 
