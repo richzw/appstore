@@ -23,6 +23,39 @@ go get github.com/richzw/appstore
 > - Enter a name for the key. The name is for your reference only and isn’t part of the key itself. Click Generate.
 > - Click Download API Key next to the new API key. And store your private key in a secure place.
 
+### Get Transaction Info
+
+```go
+import(
+	"github.com/richzw/appstore"
+)
+
+// ACCOUNTPRIVATEKEY is the key file generated from previous step
+const ACCOUNTPRIVATEKEY = `
+    -----BEGIN PRIVATE KEY-----
+    FAKEACCOUNTKEYBASE64FORMAT
+    -----END PRIVATE KEY-----
+    `
+func main() {
+    c := &appstore.StoreConfig{
+        KeyContent: []byte(ACCOUNTPRIVATEKEY),
+        KeyID:      "FAKEKEYID",
+        BundleID:   "fake.bundle.id",
+        Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
+        Sandbox:    false,
+    }
+    transactionId := "FAKETRANSACTIONID"
+    a := appstore.NewStoreClient(c)
+    response, err := a.GetTransactionInfo(context.TODO(), transactionId)
+
+    transantion, err := a.ParseSignedTransaction(response.SignedTransactionInfo)
+
+    if transaction.TransactionId == transactionId {
+        // the transaction is valid
+    }
+}
+```
+
 ### Look Up Order ID
 
 ```go
