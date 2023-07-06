@@ -121,6 +121,34 @@ func main() {
 }
 ```
 
+### Parse Notification from App Store
+
+```go
+import (
+    "github.com/richzw/appstore"
+    "github.com/golang-jwt/jwt/v4"
+)
+
+func main() {
+    c := &appstore.StoreConfig{
+        KeyContent: []byte(ACCOUNTPRIVATEKEY),
+        KeyID:      "FAKEKEYID",
+        BundleID:   "fake.bundle.id",
+        Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
+        Sandbox:    false,
+    }
+    tokenStr := "SignedRenewalInfo Encode String" // or SignedTransactionInfo string
+    token := jwt.Token{}
+    a := appstore.NewStoreClient(c)
+    err := a.ParseNotificationV2(tokenStr, &token)
+
+    claims, ok := token.Claims.(jwt.MapClaims)
+    for key, val := range claims {
+        fmt.Printf("Key: %v, value: %v\n", key, val) // key value of TransactionInfo
+    }
+}
+```
+
 # Support
 
 App Store Server API [1.8](https://developer.apple.com/documentation/appstoreserverapi)
