@@ -21,16 +21,18 @@ const (
 	HostSandBox    = "https://api.storekit-sandbox.itunes.apple.com"
 	HostProduction = "https://api.storekit.itunes.apple.com"
 
-	PathTransactionInfo               = "/inApps/v1/transactions/{transactionId}"
-	PathLookUp                        = "/inApps/v1/lookup/{orderId}"
-	PathTransactionHistory            = "/inApps/v1/history/{originalTransactionId}"
-	PathRefundHistory                 = "/inApps/v2/refund/lookup/{originalTransactionId}"
-	PathGetALLSubscriptionStatus      = "/inApps/v1/subscriptions/{originalTransactionId}"
-	PathConsumptionInfo               = "/inApps/v1/transactions/consumption/{originalTransactionId}"
-	PathExtendSubscriptionRenewalDate = "/inApps/v1/subscriptions/extend/{originalTransactionId}"
-	PathGetNotificationHistory        = "/inApps/v1/notifications/history"
-	PathRequestTestNotification       = "/inApps/v1/notifications/test"
-	PathGetTestNotificationStatus     = "/inApps/v1/notifications/test/{testNotificationToken}"
+	PathTransactionInfo                     = "/inApps/v1/transactions/{transactionId}"
+	PathLookUp                              = "/inApps/v1/lookup/{orderId}"
+	PathTransactionHistory                  = "/inApps/v1/history/{originalTransactionId}"
+	PathRefundHistory                       = "/inApps/v2/refund/lookup/{originalTransactionId}"
+	PathGetALLSubscriptionStatus            = "/inApps/v1/subscriptions/{originalTransactionId}"
+	PathConsumptionInfo                     = "/inApps/v1/transactions/consumption/{originalTransactionId}"
+	PathExtendSubscriptionRenewalDate       = "/inApps/v1/subscriptions/extend/{originalTransactionId}"
+	PathExtendSubscriptionRenewalDateForAll = "/inApps/v1/subscriptions/extend/mass/"
+	PathGetStatusOfSubscriptionRenewalDate  = "/inApps/v1/subscriptions/extend/mass/{productId}/{requestIdentifier}"
+	PathGetNotificationHistory              = "/inApps/v1/notifications/history"
+	PathRequestTestNotification             = "/inApps/v1/notifications/test"
+	PathGetTestNotificationStatus           = "/inApps/v1/notifications/test/{testNotificationToken}"
 )
 
 type StoreConfig struct {
@@ -263,6 +265,52 @@ func (c *StoreClient) ExtendSubscriptionRenewalDate(ctx context.Context, origina
 		return statusCode, err
 	}
 	return statusCode, nil
+}
+
+// ExtendSubscriptionRenewalDateForAll https://developer.apple.com/documentation/appstoreserverapi/extend_subscription_renewal_dates_for_all_active_subscribers
+func (c *StoreClient) ExtendSubscriptionRenewalDateForAll(ctx context.Context, body MassExtendRenewalDateRequest) (statusCode int, err error) {
+	URL := HostProduction + PathExtendSubscriptionRenewalDateForAll
+	if c.Token.Sandbox {
+		URL = HostSandBox + PathExtendSubscriptionRenewalDateForAll
+	}
+
+	bodyBuf := new(bytes.Buffer)
+	err = json.NewEncoder(bodyBuf).Encode(body)
+	if err != nil {
+		return 0, err
+	}
+
+	statusCode, _, err = c.Do(ctx, http.MethodPost, URL, bodyBuf)
+	if err != nil {
+		return statusCode, err
+	}
+	return statusCode, nil
+}
+
+// GetSubscriptionRenewalDataStatus https://developer.apple.com/documentation/appstoreserverapi/get_status_of_subscription_renewal_date_extensions
+func (c *StoreClient) GetSubscriptionRenewalDataStatus(ctx context.Context, productId, requestIdentifier string) (statusCode int, rsp *MassExtendRenewalDateStatusResponse, err error) {
+	URL := HostProduction + PathGetStatusOfSubscriptionRenewalDate
+	if c.Token.Sandbox {
+		URL = HostSandBox + PathGetStatusOfSubscriptionRenewalDate
+	}
+	URL = strings.Replace(URL, "{productId}", productId, -1)
+	URL = strings.Replace(URL, "{requestIdentifier}", requestIdentifier, -1)
+
+	statusCode, body, err := c.Do(ctx, http.MethodGet, URL, nil)
+	if err != nil {
+		return statusCode, nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		return statusCode, nil, fmt.Errorf("appstore api: %v return status code %v", URL, statusCode)
+	}
+
+	err = json.Unmarshal(body, &rsp)
+	if err != nil {
+		return statusCode, nil, err
+	}
+
+	return statusCode, rsp, nil
 }
 
 // GetNotificationHistory https://developer.apple.com/documentation/appstoreserverapi/get_notification_history
