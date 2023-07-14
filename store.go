@@ -467,5 +467,11 @@ func (c *StoreClient) Do(ctx context.Context, method string, url string, body io
 		return resp.StatusCode, nil, fmt.Errorf("appstore read http body err %w", err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		if rErr, ok := newAppStoreAPIError(byteData, resp.Header); ok {
+			return resp.StatusCode, byteData, rErr
+		}
+	}
+
 	return resp.StatusCode, byteData, err
 }
