@@ -48,9 +48,9 @@ func main() {
     a := appstore.NewStoreClient(c)
     response, err := a.GetTransactionInfo(context.TODO(), transactionId)
 
-    transantion, err := a.ParseSignedTransaction(response.SignedTransactionInfo)
+    transantions, err := a.ParseSignedTransactions([]{response.SignedTransactionInfo})
 
-    if transaction.TransactionId == transactionId {
+    if transactions[0].TransactionId == transactionId {
         // the transaction is valid
     }
 }
