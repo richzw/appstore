@@ -56,6 +56,13 @@ func main() {
 }
 ```
 
+- Validate the receipt
+  - One option could be to validate the receipt with the App Store server through `GetTransactionInfo` API, and then check the `transactionId` in the response matches the one you are looking for.
+
+- Error handling
+    - handler error per [apple store server api error](https://developer.apple.com/documentation/appstoreserverapi/error_codes) document
+    - [error definition](./error.go)
+
 ### Look Up Order ID
 
 ```go
