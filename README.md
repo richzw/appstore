@@ -178,14 +178,35 @@ func main() {
         Sandbox:    false,
     }
     tokenStr := "SignedRenewalInfo Encode String" // or SignedTransactionInfo string
-    token := jwt.Token{}
     a := appstore.NewStoreClient(c)
-    err := a.ParseNotificationV2(tokenStr, &token)
+    token, err := a.ParseNotificationV2(tokenStr)
 
     claims, ok := token.Claims.(jwt.MapClaims)
     for key, val := range claims {
         fmt.Printf("Key: %v, value: %v\n", key, val) // key value of TransactionInfo
     }
+}
+```
+
+```go
+import (
+    "github.com/richzw/appstore"
+    "github.com/golang-jwt/jwt/v4"
+)
+
+func main() {
+    c := &appstore.StoreConfig{
+        KeyContent: []byte(ACCOUNTPRIVATEKEY),
+        KeyID:      "FAKEKEYID",
+        BundleID:   "fake.bundle.id",
+        Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
+        Sandbox:    false,
+    }
+    tokenStr := "JWSTransactionDecodedPayload Encode String"
+    a := appstore.NewStoreClient(c)
+
+    jws, err := a.ParseNotificationV2WithClaim(tokenStr)
+    // access the fields of JWSTransactionDecodedPayload from jws directly
 }
 ```
 
