@@ -379,6 +379,14 @@ func (c *StoreClient) ParseNotificationV2(tokenStr string) (*jwt.Token, error) {
 	})
 }
 
+func (c *StoreClient) ParseNotificationV2WithClaim(tokenStr string) (jwt.Claims, error) {
+	result := &jwt.RegisteredClaims{}
+	_, err := jwt.ParseWithClaims(tokenStr, result, func(token *jwt.Token) (interface{}, error) {
+		return c.cert.extractPublicKeyFromToken(tokenStr)
+	})
+	return result, err
+}
+
 // ParseSignedTransactions parse the jws singed transactions
 // Per doc: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.6
 func (c *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
