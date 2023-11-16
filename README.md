@@ -212,7 +212,7 @@ func main() {
 
 # Support
 
-App Store Server API [1.10+](https://developer.apple.com/documentation/appstoreserverapi)
+App Store Server API [1.9+](https://developer.apple.com/documentation/appstoreserverapi)
 
 # License
 
