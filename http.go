@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/textproto"
+	"strconv"
 	"time"
 )
 
@@ -139,17 +140,29 @@ func SetResponseErrorHandler(c HTTPClient, u Unmarshaller, ptr any) DoFunc {
 		if err != nil {
 			return resp, err
 		}
+
 		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusUnauthorized {
 			return resp, nil
 		}
+
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, err
 		}
-		if err = u(b, ptr); err != nil {
+
+		var rErr appStoreAPIErrorResp
+		if err = u(b, &rErr); err != nil {
 			return resp, err
 		}
-		return resp, nil
+
+		if rErr.ErrorCode == 4290000 {
+			retryAfter, err := strconv.ParseInt(req.Header.Get("Retry-After"), 10, 64)
+			if err == nil {
+				return resp, &Error{errorCode: rErr.ErrorCode, errorMessage: rErr.ErrorMessage, retryAfter: retryAfter}
+			}
+		}
+
+		return resp, &Error{errorCode: rErr.ErrorCode, errorMessage: rErr.ErrorMessage}
 	}
 }
 

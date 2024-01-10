@@ -104,12 +104,17 @@ func (c *StoreClient) GetALLSubscriptionStatuses(ctx context.Context, originalTr
 	var client HTTPClient
 	client = c.httpCli
 	client = SetInitializer(client, c.initHttpClient)
+	apiErr := &Error{}
+	client = SetResponseErrorHandler(client, json.Unmarshal, &apiErr)
 	client = RequireResponseStatus(client, http.StatusOK)
 	client = SetRequest(ctx, client, http.MethodGet, URL)
 	rsp := &StatusResponse{}
 	client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
 
 	_, err := client.Do(nil)
+	if apiErr.errorCode != 0 {
+		return nil, apiErr
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +129,17 @@ func (c *StoreClient) GetTransactionInfo(ctx context.Context, transactionId stri
 	var client HTTPClient
 	client = c.httpCli
 	client = SetInitializer(client, c.initHttpClient)
+	apiErr := &Error{}
+	client = SetResponseErrorHandler(client, json.Unmarshal, &apiErr)
 	client = RequireResponseStatus(client, http.StatusOK)
 	client = SetRequest(ctx, client, http.MethodGet, URL)
 	rsp := &TransactionInfoResponse{}
 	client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
 
 	_, err := client.Do(nil)
+	if apiErr.errorCode != 0 {
+		return nil, apiErr
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +154,17 @@ func (c *StoreClient) LookupOrderID(ctx context.Context, orderId string) (*Order
 	var client HTTPClient
 	client = c.httpCli
 	client = SetInitializer(client, c.initHttpClient)
+	apiErr := &Error{}
+	client = SetResponseErrorHandler(client, json.Unmarshal, &apiErr)
 	client = RequireResponseStatus(client, http.StatusOK)
 	client = SetRequest(ctx, client, http.MethodGet, URL)
 	rsp := &OrderLookupResponse{}
 	client = SetResponseBodyHandler(client, json.Unmarshal, rsp)
 
 	_, err := client.Do(nil)
+	if apiErr.errorCode != 0 {
+		return nil, apiErr
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -165,26 +180,27 @@ func (c *StoreClient) GetTransactionHistory(ctx context.Context, originalTransac
 		query = &url.Values{}
 	}
 
-	var client HTTPClient
-	client = c.httpCli
-	client = SetInitializer(client, c.initHttpClient)
-	client = RequireResponseStatus(client, http.StatusOK)
-
 	for {
+		var client HTTPClient
+		client = c.httpCli
+		client = SetInitializer(client, c.initHttpClient)
+		apiErr := &Error{}
+		client = SetResponseErrorHandler(client, json.Unmarshal, &apiErr)
+		client = RequireResponseStatus(client, http.StatusOK)
+
 		rsp := HistoryResponse{}
-		client = SetRequest(ctx, client, http.MethodGet, URL+"?"+query.Encode())
 		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
-		_, err = client.Do(nil)
-		if err != nil {
-			return nil, err
+		client = SetRequest(ctx, client, http.MethodGet, URL+"?"+query.Encode())
+		_, errDo := client.Do(nil)
+		if apiErr.errorCode != 0 {
+			return nil, apiErr
+		}
+		if errDo != nil {
+			return nil, errDo
 		}
 
 		responses = append(responses, &rsp)
-		if !rsp.HasMore {
-			return
-		}
-
-		if rsp.Revision != "" {
+		if rsp.HasMore && rsp.Revision != "" {
 			query.Set("revision", rsp.Revision)
 		} else {
 			return
@@ -198,18 +214,22 @@ func (c *StoreClient) GetTransactionHistory(ctx context.Context, originalTransac
 func (c *StoreClient) GetRefundHistory(ctx context.Context, originalTransactionId string) (responses []*RefundLookupResponse, err error) {
 	baseURL := c.hostUrl + PathRefundHistory
 	baseURL = strings.Replace(baseURL, "{originalTransactionId}", originalTransactionId, -1)
-
 	URL := baseURL
-	var client HTTPClient
-	client = c.httpCli
-	client = SetInitializer(client, c.initHttpClient)
-	client = RequireResponseStatus(client, http.StatusOK)
 
 	for {
+		var client HTTPClient
+		client = c.httpCli
+		client = SetInitializer(client, c.initHttpClient)
+		apiErr := &Error{}
+		client = SetResponseErrorHandler(client, json.Unmarshal, &apiErr)
+		client = RequireResponseStatus(client, http.StatusOK)
 		rsp := RefundLookupResponse{}
 		client = SetRequest(ctx, client, http.MethodGet, URL)
 		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
 		_, err = client.Do(nil)
+		if apiErr.errorCode != 0 {
+			return nil, apiErr
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -324,12 +344,14 @@ func (c *StoreClient) GetNotificationHistory(ctx context.Context, body Notificat
 	}
 
 	URL := baseURL
-	var client HTTPClient
-	client = c.httpCli
-	client = SetInitializer(client, c.initHttpClient)
-	client = RequireResponseStatus(client, http.StatusOK)
 
 	for {
+		var client HTTPClient
+		client = c.httpCli
+		client = SetInitializer(client, c.initHttpClient)
+		apiErr := &Error{}
+		client = SetResponseErrorHandler(client, json.Unmarshal, &apiErr)
+		client = RequireResponseStatus(client, http.StatusOK)
 		rsp := NotificationHistoryResponses{}
 		rsp.NotificationHistory = make([]NotificationHistoryResponseItem, 0)
 
@@ -337,6 +359,9 @@ func (c *StoreClient) GetNotificationHistory(ctx context.Context, body Notificat
 		client = SetRequestBodyJSON(client, bodyBuf)
 		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
 		_, err = client.Do(nil)
+		if apiErr.errorCode != 0 {
+			return nil, apiErr
+		}
 		if err != nil {
 			return nil, err
 		}
