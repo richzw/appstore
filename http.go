@@ -133,6 +133,26 @@ func SetRequestBodyJSON(c HTTPClient, v any) DoFunc {
 	return SetRequestBody(c, json.Marshal, v)
 }
 
+func SetResponseErrorHandler(c HTTPClient, u Unmarshaller, ptr any) DoFunc {
+	return func(req *http.Request) (*http.Response, error) {
+		resp, err := c.Do(req)
+		if err != nil {
+			return resp, err
+		}
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusUnauthorized {
+			return resp, nil
+		}
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return resp, err
+		}
+		if err = u(b, ptr); err != nil {
+			return resp, err
+		}
+		return resp, nil
+	}
+}
+
 func SetResponseBodyHandler(c HTTPClient, u Unmarshaller, ptr any) DoFunc {
 	c = RequireResponseBody(c)
 	return func(req *http.Request) (*http.Response, error) {
