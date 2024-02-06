@@ -58,7 +58,17 @@ func main() {
 
 - Validate the receipt
   - One option could be to validate the receipt with the App Store server through `GetTransactionInfo` API, and then check the `transactionId` in the response matches the one you are looking for.
-
+- The App Store Server API differentiates between a sandbox and a production environment based on the base URL:
+  - Use https://api.storekit.itunes.apple.com/ for the production environment.
+  - Use https://api.storekit-sandbox.itunes.apple.com/ for the sandbox environment.
+- If you're unsure about the environment, follow these steps:
+  - Initiate a call to the endpoint using the production URL. If the call is successful, the transaction identifier is associated with the production environment.
+  - If you encounter an error code `4040010`, indicating a `TransactionIdNotFoundError`, make a call to the endpoint using the sandbox URL.
+- [Handle exceeded rate limits gracefully](https://developer.apple.com/documentation/appstoreserverapi/identifying_rate_limits)
+  - If you exceed a per-hour limit, the API rejects the request with an HTTP 429 response, with a RateLimitExceededError in the body. Consider the following as you integrate the API:
+    - If you periodically call the API, throttle your requests to avoid exceeding the per-hour limit for an endpoint.
+    - Manage the HTTP 429 RateLimitExceededError in your error-handling process. For example, log the failure and queue the job to process it again at a later time.
+    - Check the Retry-After header if you receive the HTTP 429 error. This header contains a UNIX time, in milliseconds, that informs you when you can next send a request.
 - Error handling
     - handler error per [apple store server api error](https://developer.apple.com/documentation/appstoreserverapi/error_codes) document
     - [error definition](./error.go)
