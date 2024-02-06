@@ -1,6 +1,7 @@
-
-[App Store Server API](https://developer.apple.com/documentation/appstoreserverapi) Golang Client
+Apple App Store Server Golang Library
 ================
+
+The Golang server library for the [App Store Server API](https://developer.apple.com/documentation/appstoreserverapi) and [App Store Server Notifications](https://developer.apple.com/documentation/appstoreservernotifications).
 
 The App Store Server API is a REST API that you call from your server to request and provide information about your customers' in-app purchases. 
 
