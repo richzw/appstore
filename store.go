@@ -36,11 +36,13 @@ const (
 )
 
 type StoreConfig struct {
-	KeyContent []byte // Loads a .p8 certificate
-	KeyID      string // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
-	BundleID   string // Your app’s bundle ID
-	Issuer     string // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
-	Sandbox    bool   // default is Production
+	KeyContent         []byte       // Loads a .p8 certificate
+	KeyID              string       // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
+	BundleID           string       // Your app’s bundle ID
+	Issuer             string       // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
+	Sandbox            bool         // default is Production
+	TokenIssuedAtFunc  func() int64 // The token’s creation time func. Default is current timestamp.
+	TokenExpiredAtFunc func() int64 // The token’s expiration time func. Default is one hour later.
 }
 
 type StoreClient struct {
