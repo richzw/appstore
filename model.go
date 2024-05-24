@@ -308,12 +308,14 @@ type NotificationPayload struct {
 // Notification Data
 type NotificationData struct {
 	jwt.RegisteredClaims
-	AppAppleID            int    `json:"appAppleId"`
-	BundleID              string `json:"bundleId"`
-	BundleVersion         string `json:"bundleVersion"`
-	Environment           string `json:"environment"`
-	SignedRenewalInfo     string `json:"signedRenewalInfo"`
-	SignedTransactionInfo string `json:"signedTransactionInfo"`
+	AppAppleID               int    `json:"appAppleId"`
+	BundleID                 string `json:"bundleId"`
+	BundleVersion            string `json:"bundleVersion"`
+	ConsumptionRequestReason string `json:"consumptionRequestReason"`
+	Environment              string `json:"environment"`
+	SignedRenewalInfo        string `json:"signedRenewalInfo"`
+	SignedTransactionInfo    string `json:"signedTransactionInfo"`
+	Status                   int    `json:"status"`
 }
 
 // Notification Transaction Info
