@@ -47,7 +47,7 @@ type StoreConfig struct {
 
 type StoreClient struct {
 	Token   *Token
-	httpCli *http.Client
+	httpCli HTTPClient
 	cert    *Cert
 	hostUrl string
 }
@@ -73,7 +73,7 @@ func NewStoreClient(config *StoreConfig) *StoreClient {
 }
 
 // NewStoreClientWithHTTPClient creates a appstore server api client with a custom http client.
-func NewStoreClientWithHTTPClient(config *StoreConfig, httpClient *http.Client) *StoreClient {
+func NewStoreClientWithHTTPClient(config *StoreConfig, httpClient HTTPClient) *StoreClient {
 	token := &Token{}
 	token.WithConfig(config)
 	hostUrl := HostProduction
