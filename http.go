@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -220,7 +221,7 @@ func ShouldRetryDefault(status int, err error) bool {
 	if status == http.StatusTooManyRequests {
 		return true
 	}
-	if err == io.ErrUnexpectedEOF {
+	if errors.Is(err, io.ErrUnexpectedEOF) {
 		return true
 	}
 
