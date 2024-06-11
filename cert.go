@@ -11,7 +11,7 @@ import (
 )
 
 // openssl x509 -inform der -in AppleRootCA-G3.cer -out apple_root.pem
-const rootPEM = `
+const defaultRootPEM = `
 -----BEGIN CERTIFICATE-----
 MIICQzCCAcmgAwIBAgIILcX8iNLFS5UwCgYIKoZIzj0EAwMwZzEbMBkGA1UEAwwS
 QXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBDZXJ0aWZpY2F0aW9u
@@ -30,106 +30,74 @@ at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM
 `
 
 type Cert struct {
+	rootCertPool *x509.CertPool
 }
 
-func (c *Cert) extractCertByIndex(tokenStr string, index int) ([]byte, error) {
-	if index > 2 {
-		return nil, errors.New("invalid index")
+func newCert(rootCertPool *x509.CertPool) *Cert {
+	if rootCertPool == nil {
+		rootCertPool = x509.NewCertPool()
+		rootCertPool.AppendCertsFromPEM([]byte(defaultRootPEM))
 	}
+	return &Cert{rootCertPool: rootCertPool}
+}
 
-	tokenArr := strings.Split(tokenStr, ".")
-	headerByte, err := base64.RawStdEncoding.DecodeString(tokenArr[0])
+func (c *Cert) parseCert(certStr string) (*x509.Certificate, error) {
+	certByte, err := base64.StdEncoding.DecodeString(certStr)
+	if err != nil {
+		return nil, err
+	}
+	return x509.ParseCertificate(certByte)
+}
+
+func (c *Cert) extractPublicKeyFromToken(token string) (*ecdsa.PublicKey, error) {
+	headerStr, _, _ := strings.Cut(token, ".")
+	headerByte, err := base64.RawStdEncoding.DecodeString(headerStr)
 	if err != nil {
 		return nil, err
 	}
 
-	type Header struct {
+	var header struct {
 		Alg string   `json:"alg"`
 		X5c []string `json:"x5c"`
 	}
-	var header Header
 	err = json.Unmarshal(headerByte, &header)
 	if err != nil {
 		return nil, err
 	}
-
-	certByte, err := base64.StdEncoding.DecodeString(header.X5c[index])
-	if err != nil {
-		return nil, err
+	if len(header.X5c) == 0 {
+		return nil, errors.New("appstore found no certificates in x5c header field")
 	}
 
-	return certByte, nil
-}
+	opts := x509.VerifyOptions{Roots: c.rootCertPool}
 
-func (c *Cert) verifyCert(rootCert, intermediaCert, leafCert *x509.Certificate) error {
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM([]byte(rootPEM))
+	leafCert, err := c.parseCert(header.X5c[0])
+	if err != nil {
+		return nil, fmt.Errorf("appstore failed to parse leaf certificate: %w", err)
+	}
+	header.X5c = header.X5c[1:]
+
+	pk, ok := leafCert.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
-		return errors.New("failed to parse root certificate")
+		return nil, errors.New("appstore public key must be of type ecdsa.PublicKey")
 	}
 
-	intermedia := x509.NewCertPool()
-	intermedia.AddCert(intermediaCert)
+	// Build intermediate cert pool if there is more than 1 certificate in the header
+	if len(header.X5c) > 0 {
+		opts.Intermediates = x509.NewCertPool()
 
-	opts := x509.VerifyOptions{
-		Roots:         roots,
-		Intermediates: intermedia,
-	}
-	_, err := rootCert.Verify(opts)
-	if err != nil {
-		return err
+		for i, certStr := range header.X5c {
+			cert, err := c.parseCert(certStr)
+			if err != nil {
+				return nil, fmt.Errorf("appstore failed to parse intermediate certificate %d: %w", i, err)
+			}
+			opts.Intermediates.AddCert(cert)
+		}
 	}
 
 	_, err = leafCert.Verify(opts)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("appstore failed to verify leaf certificate: %w", err)
 	}
 
-	// TODO: maybe we need the chains info later
-	//for _, ch := range chains {
-	//	for _, c := range ch {
-	//		fmt.Printf("%+v, %s, %+v \n", c.AuthorityKeyId, c.Subject.Organization, c.ExtKeyUsage)
-	//	}
-	//}
-
-	return nil
-}
-
-func (c *Cert) extractPublicKeyFromToken(token string) (*ecdsa.PublicKey, error) {
-	rootCertBytes, err := c.extractCertByIndex(token, 2)
-	if err != nil {
-		return nil, err
-	}
-	rootCert, err := x509.ParseCertificate(rootCertBytes)
-	if err != nil {
-		return nil, fmt.Errorf("appstore failed to parse root certificate")
-	}
-
-	intermediaCertBytes, err := c.extractCertByIndex(token, 1)
-	if err != nil {
-		return nil, err
-	}
-	intermediaCert, err := x509.ParseCertificate(intermediaCertBytes)
-	if err != nil {
-		return nil, fmt.Errorf("appstore failed to parse intermediate certificate")
-	}
-
-	leafCertBytes, err := c.extractCertByIndex(token, 0)
-	if err != nil {
-		return nil, err
-	}
-	leafCert, err := x509.ParseCertificate(leafCertBytes)
-	if err != nil {
-		return nil, fmt.Errorf("appstore failed to parse leaf certificate")
-	}
-	if err = c.verifyCert(rootCert, intermediaCert, leafCert); err != nil {
-		return nil, err
-	}
-
-	switch pk := leafCert.PublicKey.(type) {
-	case *ecdsa.PublicKey:
-		return pk, nil
-	default:
-		return nil, errors.New("appstore public key must be of type ecdsa.PublicKey")
-	}
+	return pk, nil
 }
