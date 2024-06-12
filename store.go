@@ -3,7 +3,6 @@ package appstore
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -36,13 +35,14 @@ const (
 )
 
 type StoreConfig struct {
-	KeyContent         []byte       // Loads a .p8 certificate
-	KeyID              string       // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
-	BundleID           string       // Your app’s bundle ID
-	Issuer             string       // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
-	Sandbox            bool         // default is Production
-	TokenIssuedAtFunc  func() int64 // The token’s creation time func. Default is current timestamp.
-	TokenExpiredAtFunc func() int64 // The token’s expiration time func. Default is one hour later.
+	KeyContent         []byte         // Loads a .p8 certificate
+	KeyID              string         // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
+	BundleID           string         // Your app’s bundle ID
+	Issuer             string         // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
+	Sandbox            bool           // default is Production
+	TokenIssuedAtFunc  func() int64   // The token’s creation time func. Default is current timestamp.
+	TokenExpiredAtFunc func() int64   // The token’s expiration time func. Default is one hour later.
+	TrustedCertPool    *x509.CertPool // The pool of trusted root certificates. Default is a pool containing only Apple Root CA - G3.
 }
 
 type StoreClient struct {
@@ -63,7 +63,7 @@ func NewStoreClient(config *StoreConfig) *StoreClient {
 
 	client := &StoreClient{
 		Token: token,
-		cert:  &Cert{},
+		cert:  newCert(config.TrustedCertPool),
 		httpCli: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -83,7 +83,7 @@ func NewStoreClientWithHTTPClient(config *StoreConfig, httpClient HTTPClient) *S
 
 	client := &StoreClient{
 		Token:   token,
-		cert:    &Cert{},
+		cert:    newCert(config.TrustedCertPool),
 		httpCli: httpClient,
 		hostUrl: hostUrl,
 	}
@@ -454,43 +454,8 @@ func (c *StoreClient) ParseJWSEncodeString(jwsEncode string) (interface{}, error
 }
 
 func (c *StoreClient) parseJWS(jwsEncode string, claims jwt.Claims) error {
-	rootCertBytes, err := c.cert.extractCertByIndex(jwsEncode, 2)
-	if err != nil {
-		return err
-	}
-	rootCert, err := x509.ParseCertificate(rootCertBytes)
-	if err != nil {
-		return fmt.Errorf("appstore failed to parse root certificate")
-	}
-
-	intermediaCertBytes, err := c.cert.extractCertByIndex(jwsEncode, 1)
-	if err != nil {
-		return err
-	}
-	intermediaCert, err := x509.ParseCertificate(intermediaCertBytes)
-	if err != nil {
-		return fmt.Errorf("appstore failed to parse intermediate certificate")
-	}
-
-	leafCertBytes, err := c.cert.extractCertByIndex(jwsEncode, 0)
-	if err != nil {
-		return err
-	}
-	leafCert, err := x509.ParseCertificate(leafCertBytes)
-	if err != nil {
-		return fmt.Errorf("appstore failed to parse leaf certificate")
-	}
-	if err = c.cert.verifyCert(rootCert, intermediaCert, leafCert); err != nil {
-		return err
-	}
-
-	pk, ok := leafCert.PublicKey.(*ecdsa.PublicKey)
-	if !ok {
-		return fmt.Errorf("appstore public key must be of type ecdsa.PublicKey")
-	}
-
-	_, err = jwt.ParseWithClaims(jwsEncode, claims, func(token *jwt.Token) (interface{}, error) {
-		return pk, nil
+	_, err := jwt.ParseWithClaims(jwsEncode, claims, func(token *jwt.Token) (interface{}, error) {
+		return c.cert.extractPublicKeyFromToken(jwsEncode)
 	})
 	return err
 }
