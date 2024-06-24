@@ -22,7 +22,7 @@ const (
 
 	PathTransactionInfo                     = "/inApps/v1/transactions/{transactionId}"
 	PathLookUp                              = "/inApps/v1/lookup/{orderId}"
-	PathTransactionHistory                  = "/inApps/v1/history/{originalTransactionId}"
+	PathTransactionHistory                  = "/inApps/v2/history/{originalTransactionId}"
 	PathRefundHistory                       = "/inApps/v2/refund/lookup/{originalTransactionId}"
 	PathGetALLSubscriptionStatus            = "/inApps/v1/subscriptions/{originalTransactionId}"
 	PathConsumptionInfo                     = "/inApps/v1/transactions/consumption/{originalTransactionId}"
