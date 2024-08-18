@@ -236,6 +236,10 @@ const (
 	NotificationTypeV2Revoke                 NotificationTypeV2 = "REVOKE"
 	NotificationTypeV2Subscribed             NotificationTypeV2 = "SUBSCRIBED"
 	NotificationTypeV2OneTimeCharge          NotificationTypeV2 = "ONE_TIME_CHARGE"
+	NotificationTypeV2RefundReversed         NotificationTypeV2 = "REFUND_REVERSED"
+	NotificationTypeV2ExternalPurchaseToken  NotificationTypeV2 = "EXTERNAL_PURCHASE_TOKEN"
+	NotificationTypeV2RenewalExtension       NotificationTypeV2 = "RENEWAL_EXTENSION"
+	NotificationTypeV2Test                   NotificationTypeV2 = "TEST"
 )
 
 // SubtypeV2 is type
