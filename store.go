@@ -337,7 +337,8 @@ func (c *StoreClient) GetSubscriptionRenewalDataStatus(ctx context.Context, prod
 
 // GetNotificationHistory https://developer.apple.com/documentation/appstoreserverapi/get_notification_history
 func (c *StoreClient) GetNotificationHistory(ctx context.Context, body NotificationHistoryRequest) (responses []NotificationHistoryResponseItem, err error) {
-	URL := c.hostUrl + PathGetNotificationHistory
+	baseURL := c.hostUrl + PathGetNotificationHistory
+	URL := baseURL
 
 	for {
 		var client HTTPClient
