@@ -338,13 +338,6 @@ func (c *StoreClient) GetSubscriptionRenewalDataStatus(ctx context.Context, prod
 // GetNotificationHistory https://developer.apple.com/documentation/appstoreserverapi/get_notification_history
 func (c *StoreClient) GetNotificationHistory(ctx context.Context, body NotificationHistoryRequest) (responses []NotificationHistoryResponseItem, err error) {
 	baseURL := c.hostUrl + PathGetNotificationHistory
-
-	bodyBuf := new(bytes.Buffer)
-	err = json.NewEncoder(bodyBuf).Encode(body)
-	if err != nil {
-		return nil, err
-	}
-
 	URL := baseURL
 
 	for {
@@ -357,8 +350,8 @@ func (c *StoreClient) GetNotificationHistory(ctx context.Context, body Notificat
 		rsp := NotificationHistoryResponses{}
 		rsp.NotificationHistory = make([]NotificationHistoryResponseItem, 0)
 
+		client = SetRequestBodyJSON(client, body)
 		client = SetRequest(ctx, client, http.MethodPost, URL)
-		client = SetRequestBodyJSON(client, bodyBuf)
 		client = SetResponseBodyHandler(client, json.Unmarshal, &rsp)
 		_, err = client.Do(nil)
 		if apiErr.errorCode != 0 {
