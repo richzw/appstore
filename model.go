@@ -304,6 +304,11 @@ type SendTestNotificationResponse struct {
 	TestNotificationToken string `json:"testNotificationToken"`
 }
 
+// Notification body https://developer.apple.com/documentation/appstoreservernotifications/responsebodyv2
+type NotificationV2 struct {
+	SignedPayload string `json:"signedPayload"`
+}
+
 // Notification signed payload
 type NotificationPayload struct {
 	jwt.RegisteredClaims

@@ -407,6 +407,41 @@ func (c *StoreClient) ParseNotificationV2WithClaim(tokenStr string) (jwt.Claims,
 	return result, err
 }
 
+func (c *StoreClient) ParseSignedPayload(tokenStr string, claims jwt.Claims) error {
+	_, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
+		return c.cert.extractPublicKeyFromToken(tokenStr)
+	})
+
+	return err
+}
+
+func (c *StoreClient) ParseNotificationV2Payload(signedPayload string) (*NotificationPayload, error) {
+	var result NotificationPayload
+	if err := c.ParseSignedPayload(signedPayload, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (c *StoreClient) ParseNotificationV2TransactionInfo(signedTransactionInfo string) (*JWSRenewalInfoDecodedPayload, error) {
+	var result JWSRenewalInfoDecodedPayload
+	if err := c.ParseSignedPayload(signedTransactionInfo, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func (c *StoreClient) ParseNotificationV2RenewalInfo(signedRenewalInfo string) (*JWSTransaction, error) {
+	var result JWSTransaction
+	if err := c.ParseSignedPayload(signedRenewalInfo, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // ParseSignedTransactions parse the jws singed transactions
 // Per doc: https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.6
 func (c *StoreClient) ParseSignedTransactions(transactions []string) ([]*JWSTransaction, error) {
