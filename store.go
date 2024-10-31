@@ -407,6 +407,8 @@ func (c *StoreClient) ParseNotificationV2WithClaim(tokenStr string) (jwt.Claims,
 	return result, err
 }
 
+// ParseSignedPayload parses any signed JWS payload from a server notification into
+// a struct that implements the jwt.Claims interface.
 func (c *StoreClient) ParseSignedPayload(tokenStr string, claims jwt.Claims) error {
 	_, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (any, error) {
 		return c.cert.extractPublicKeyFromToken(tokenStr)
@@ -415,6 +417,8 @@ func (c *StoreClient) ParseSignedPayload(tokenStr string, claims jwt.Claims) err
 	return err
 }
 
+// ParseNotificationV2 parses the signedPayload field from an App Store Server Notification response body
+// (https://developer.apple.com/documentation/appstoreservernotifications/responsebodyv2)
 func (c *StoreClient) ParseNotificationV2Payload(signedPayload string) (*NotificationPayload, error) {
 	var result NotificationPayload
 	if err := c.ParseSignedPayload(signedPayload, &result); err != nil {
@@ -424,6 +428,8 @@ func (c *StoreClient) ParseNotificationV2Payload(signedPayload string) (*Notific
 	return &result, nil
 }
 
+// ParseNotificationV2 parses the signedTransactionInfo from decoded notification data
+// (https://developer.apple.com/documentation/appstoreservernotifications/data)
 func (c *StoreClient) ParseNotificationV2TransactionInfo(signedTransactionInfo string) (*JWSRenewalInfoDecodedPayload, error) {
 	var result JWSRenewalInfoDecodedPayload
 	if err := c.ParseSignedPayload(signedTransactionInfo, &result); err != nil {
@@ -433,6 +439,8 @@ func (c *StoreClient) ParseNotificationV2TransactionInfo(signedTransactionInfo s
 	return &result, nil
 }
 
+// ParseNotificationV2 parses the signedRenewalInfo from decoded notification data
+// (https://developer.apple.com/documentation/appstoreservernotifications/data)
 func (c *StoreClient) ParseNotificationV2RenewalInfo(signedRenewalInfo string) (*JWSTransaction, error) {
 	var result JWSTransaction
 	if err := c.ParseSignedPayload(signedRenewalInfo, &result); err != nil {
