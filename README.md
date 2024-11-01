@@ -1,9 +1,8 @@
-Apple App Store Server Golang Library
-================
+# Apple App Store Server Golang Library
 
 The Golang server library for the [App Store Server API](https://developer.apple.com/documentation/appstoreserverapi) and [App Store Server Notifications](https://developer.apple.com/documentation/appstoreservernotifications).
 
-The App Store Server API is a REST API that you call from your server to request and provide information about your customers' in-app purchases. 
+The App Store Server API is a REST API that you call from your server to request and provide information about your customers' in-app purchases.
 
 The App Store Server API is independent of the app’s installation status on the customers’ devices. The App Store server returns information based on a customer’s in-app purchase history regardless of whether the customer installs, removes, or reinstalls the app on their devices.
 
@@ -18,6 +17,7 @@ go get github.com/richzw/appstore
 ### [Generate a Private Key](https://developer.apple.com/documentation/appstoreserverapi/creating_api_keys_to_use_with_the_app_store_server_api)
 
 > Log in to [App Store Connect](https://appstoreconnect.apple.com/login) and complete the following steps:
+>
 > - Select Users and Access, and then select the Keys tab.
 > - Select In-App Purchase under the Key Type.
 > - Click Generate API Key or the Add (+) button.
@@ -70,8 +70,8 @@ func main() {
     - Manage the HTTP 429 RateLimitExceededError in your error-handling process. For example, log the failure and queue the job to process it again at a later time.
     - Check the Retry-After header if you receive the HTTP 429 error. This header contains a UNIX time, in milliseconds, that informs you when you can next send a request.
 - Error handling
-    - handler error per [apple store server api error](https://developer.apple.com/documentation/appstoreserverapi/error_codes) document
-    - [error definition](./error.go)
+  - handler error per [apple store server api error](https://developer.apple.com/documentation/appstoreserverapi/error_codes) document
+  - [error definition](./error.go)
 
 ### Look Up Order ID
 
@@ -220,6 +220,51 @@ func main() {
 }
 ```
 
+### Parse signed notification payloads from App Store Server Notification request
+
+```go
+import (
+    "encoding/json"
+
+    "github.com/richzw/appstore"
+)
+
+func main() {
+    c := &appstore.StoreConfig{
+        KeyContent: []byte(ACCOUNTPRIVATEKEY),
+        KeyID:      "FAKEKEYID",
+        BundleID:   "fake.bundle.id",
+        Issuer:     "xxxxx-xx-xx-xx-xxxxxxxxxx",
+        Sandbox:    false,
+    }
+    a := appstore.NewStoreClient(c)
+
+    reqBody := []byte{} // Request from App Store Server Notification
+    var notification appstore.NotificationV2
+    if _, err := json.Unmarshal(reqBody, &notification); err != nil {
+        panic(err)
+    }
+
+    // Parse the notification payload
+    payload, err := a.ParseNotificationV2Payload(notification.SignedPayload)
+    if err != nil {
+        panic(err)
+    }
+
+    // Parse the transaction info
+    transactionInfo, err := a.ParseNotificationV2TransactionInfo(payload.Data.SignedTransactionInfo)
+    if err != nil {
+        panic(err)
+    }
+
+    // Parse the renewal info
+    renewalInfo, err := a.ParseNotificationV2RenewalInfo(payload.Data.SignedRenewalInfo)
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
 # Support
 
 App Store Server API [1.12+](https://developer.apple.com/documentation/appstoreserverapi)
@@ -227,4 +272,3 @@ App Store Server API [1.12+](https://developer.apple.com/documentation/appstores
 # License
 
 appstore is licensed under the MIT.
-
