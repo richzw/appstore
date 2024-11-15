@@ -430,8 +430,8 @@ func (c *StoreClient) ParseNotificationV2Payload(signedPayload string) (*Notific
 
 // ParseNotificationV2 parses the signedTransactionInfo from decoded notification data
 // (https://developer.apple.com/documentation/appstoreservernotifications/data)
-func (c *StoreClient) ParseNotificationV2TransactionInfo(signedTransactionInfo string) (*JWSRenewalInfoDecodedPayload, error) {
-	var result JWSRenewalInfoDecodedPayload
+func (c *StoreClient) ParseNotificationV2TransactionInfo(signedTransactionInfo string) (*JWSTransaction, error) {
+	var result JWSTransaction
 	if err := c.ParseSignedPayload(signedTransactionInfo, &result); err != nil {
 		return nil, err
 	}
@@ -441,8 +441,8 @@ func (c *StoreClient) ParseNotificationV2TransactionInfo(signedTransactionInfo s
 
 // ParseNotificationV2 parses the signedRenewalInfo from decoded notification data
 // (https://developer.apple.com/documentation/appstoreservernotifications/data)
-func (c *StoreClient) ParseNotificationV2RenewalInfo(signedRenewalInfo string) (*JWSTransaction, error) {
-	var result JWSTransaction
+func (c *StoreClient) ParseNotificationV2RenewalInfo(signedRenewalInfo string) (*JWSRenewalInfoDecodedPayload, error) {
+	var result JWSRenewalInfoDecodedPayload
 	if err := c.ParseSignedPayload(signedRenewalInfo, &result); err != nil {
 		return nil, err
 	}
