@@ -1,7 +1,7 @@
 package appstore
 
 import (
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // OrderLookupResponse https://developer.apple.com/documentation/appstoreserverapi/orderlookupresponse
@@ -111,6 +111,30 @@ func (J JWSRenewalInfoDecodedPayload) Valid() error {
 	return nil
 }
 
+func (J JWSRenewalInfoDecodedPayload) GetAudience() (jwt.ClaimStrings, error) {
+	return nil, nil
+}
+
+func (J JWSRenewalInfoDecodedPayload) GetExpirationTime() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (J JWSRenewalInfoDecodedPayload) GetIssuedAt() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (J JWSRenewalInfoDecodedPayload) GetIssuer() (string, error) {
+	return "", nil
+}
+
+func (J JWSRenewalInfoDecodedPayload) GetNotBefore() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (J JWSRenewalInfoDecodedPayload) GetSubject() (string, error) {
+	return "", nil
+}
+
 // JWSDecodedHeader https://developer.apple.com/documentation/appstoreserverapi/jwsdecodedheader
 type JWSDecodedHeader struct {
 	Alg string   `json:"alg,omitempty"`
@@ -177,6 +201,29 @@ type JWSTransaction struct {
 
 func (J JWSTransaction) Valid() error {
 	return nil
+}
+func (J JWSTransaction) GetAudience() (jwt.ClaimStrings, error) {
+	return nil, nil
+}
+
+func (J JWSTransaction) GetExpirationTime() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (J JWSTransaction) GetIssuedAt() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (J JWSTransaction) GetIssuer() (string, error) {
+	return "", nil
+}
+
+func (J JWSTransaction) GetNotBefore() (*jwt.NumericDate, error) {
+	return nil, nil
+}
+
+func (J JWSTransaction) GetSubject() (string, error) {
+	return "", nil
 }
 
 // https://developer.apple.com/documentation/appstoreserverapi/extendreasoncode
