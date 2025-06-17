@@ -414,3 +414,7 @@ type RenewalInfo struct {
 	SignedDate             int    `json:"signedDate"`
 	Environment            string `json:"environment"`
 }
+
+type UpdateAppAccountTokenRequest struct {
+	AppAccountToken string `json:"appAccountToken"`
+}

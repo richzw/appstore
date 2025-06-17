@@ -32,6 +32,7 @@ const (
 	PathGetNotificationHistory              = "/inApps/v1/notifications/history"
 	PathRequestTestNotification             = "/inApps/v1/notifications/test"
 	PathGetTestNotificationStatus           = "/inApps/v1/notifications/test/{testNotificationToken}"
+	PathSetAppAccountToken                  = "/inApps/v1/transactions/{originalTransactionId}/appAccountToken"
 )
 
 type StoreConfig struct {
@@ -391,6 +392,24 @@ func (c *StoreClient) GetTestNotificationStatus(ctx context.Context, testNotific
 	URL = strings.Replace(URL, "{testNotificationToken}", testNotificationToken, -1)
 
 	return c.Do(ctx, http.MethodGet, URL, nil)
+}
+
+// SetAppAccountToken https://developer.apple.com/documentation/appstoreserverapi/set-app-account-tokenAdd
+func (c *StoreClient) SetAppAccountToken(ctx context.Context, originalTransactionId string, body UpdateAppAccountTokenRequest) (statusCode int, err error) {
+	URL := c.hostUrl + PathSetAppAccountToken
+	URL = strings.Replace(URL, "{originalTransactionId}", originalTransactionId, -1)
+
+	bodyBuf := new(bytes.Buffer)
+	err = json.NewEncoder(bodyBuf).Encode(body)
+	if err != nil {
+		return 0, err
+	}
+
+	statusCode, _, err = c.Do(ctx, http.MethodPut, URL, bodyBuf)
+	if err != nil {
+		return statusCode, err
+	}
+	return statusCode, nil
 }
 
 func (c *StoreClient) ParseNotificationV2(tokenStr string) (*jwt.Token, error) {
