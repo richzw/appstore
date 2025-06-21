@@ -28,6 +28,7 @@ type Token struct {
 	KeyID         string       // Your private key ID from App Store Connect (Ex: 2X9R4HXF34)
 	BundleID      string       // Your app’s bundle ID
 	Issuer        string       // Your issuer ID from the Keys page in App Store Connect (Ex: "57246542-96fe-1a63-e053-0824d011072a")
+	Audience      string       // Your audience (aud) for generating the token (some Apple APIs require a specific aud, such as Sign In with Apple ID).
 	Sandbox       bool         // default is Production
 	IssuedAtFunc  func() int64 // The token’s creation time func. Default is current timestamp.
 	ExpiredAtFunc func() int64 // The token’s expiration time func.
@@ -46,6 +47,7 @@ func (t *Token) WithConfig(c *StoreConfig) {
 	t.KeyID = c.KeyID
 	t.BundleID = c.BundleID
 	t.Issuer = c.Issuer
+	t.Audience = c.Audience
 	t.Sandbox = c.Sandbox
 	t.IssuedAtFunc = c.TokenIssuedAtFunc
 	t.ExpiredAtFunc = c.TokenExpiredAtFunc
@@ -88,6 +90,10 @@ func (t *Token) Generate() error {
 	if t.ExpiredAtFunc != nil {
 		expiredAt = t.ExpiredAtFunc()
 	}
+	audience := t.Audience
+	if audience == "" {
+		audience = "appstoreconnect-v1"
+	}
 	jwtToken := &jwt.Token{
 		Header: map[string]interface{}{
 			"alg": "ES256",
@@ -99,7 +105,7 @@ func (t *Token) Generate() error {
 			"iss":   t.Issuer,
 			"iat":   issuedAt,
 			"exp":   expiredAt,
-			"aud":   "appstoreconnect-v1",
+			"aud":   audience,
 			"nonce": uuid.New(),
 			"bid":   t.BundleID,
 		},
