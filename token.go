@@ -18,6 +18,7 @@ import (
 var (
 	ErrAuthKeyInvalidPem  = errors.New("token: AuthKey must be a valid .p8 PEM file")
 	ErrAuthKeyInvalidType = errors.New("token: AuthKey must be of type ecdsa.PrivateKey")
+	DefaultAudience       = "appstoreconnect-v1"
 )
 
 // Token represents an Apple Provider Authentication Token (JSON Web Token).
@@ -92,7 +93,7 @@ func (t *Token) Generate() error {
 	}
 	audience := t.Audience
 	if audience == "" {
-		audience = "appstoreconnect-v1"
+		audience = DefaultAudience
 	}
 	jwtToken := &jwt.Token{
 		Header: map[string]interface{}{
